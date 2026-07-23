@@ -254,8 +254,26 @@ latexmk -r latexmkrc-lua example-junbi-02-lua.tex
 
 ## フォント入手方法
 
-IVS 異体字（`\ivs{文字}`）を使うには **IPAmj明朝**（`ipamjm.ttf`）が別途必要です。
-GPL の対象外（別ライセンス）のため、本配布物にはフォント自体を同梱していません。
+いずれも GPL の対象外（別ライセンス）のため、本配布物にはフォント自体を同梱していません。
+
+### 本文用フォント：原ノ味明朝（必須）
+
+全テンプレートで本文フォントとして **原ノ味明朝**（HaranoAjiMincho）を使用します。
+
+- **TeX Live を使っている場合**: CTAN の `haranoaji` パッケージとして TeX Live に収録されており
+  （`tlmgr info haranoaji` で確認可）、日本語組版一式を含むインストールでは通常追加作業不要です。
+  見つからない場合は次でインストールできます（Windows の TeX Live でも同様）:
+  ```sh
+  tlmgr install haranoaji
+  ```
+- 単体配布: <https://github.com/trueroad/HaranoAjiFonts>
+- ライセンス: **SIL Open Font License, Version 1.1**
+  - Copyright (C) 2019-2025 Masamichi Hosoda / (C) 2014-2025 Adobe
+  - 商用・非商用を問わず、OFLの条件に従う限り無償で利用・再配布・改変可
+
+### IVS異体字用フォント：IPAmj明朝（任意）
+
+IVS 異体字（`\ivs{文字}`）を使う場合のみ **IPAmj明朝**（`ipamjm.ttf`）が別途必要です。
 
 - 配布元: 一般社団法人 文字情報技術促進協議会
   <https://moji.or.jp/mojikiban/font/>
@@ -264,8 +282,6 @@ GPL の対象外（別ライセンス）のため、本配布物にはフォン�
   - ただし改変フォントの再配布時は名称変更が必要等、GPLとは別条件のため、
     フォント自体を再配布する場合は同ライセンス文面を別途確認すること
 - インストール後、`kian-ivs.sty` から `IPAmjMincho` の名前で自動参照される
-
-メインフォント（本文用）の**原ノ味明朝**（HaranoAjiMincho）も別途必要です。
 
 ---
 
