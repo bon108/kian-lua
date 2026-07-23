@@ -2295,8 +2295,13 @@
 \def\kian@titl@today@A#1{% 1:幅揃え(Y/N)
   \@ifnextchar[{\kian@titl@today@B{#1}}{\kian@titl@today@B{#1}[0]}%]
 }%
+% 2026-07-23: 秦氏の後続版（kian-titl.sty v09, 2022/03/04）で修正済みの \today[] 分岐漏れを反映
 \def\kian@titl@today@B#1[#2]{{% 1:幅揃え(Y/N) 2:ずらす日数 3:年月日
-  \kian@titl@arrangedate@C#1[#2]\the\year.\the\month.\the\day/\the\year.\the\month.\the\day\@nil%
+  \ifx\relax#2\relax%
+    \kian@titl@arrangedate@C#1[0]\the\year.\the\month.\the\day/\the\year.\the\month.\the\day\@nil%
+  \else%
+    \kian@titl@arrangedate@C#1[#2]\the\year.\the\month.\the\day/\the\year.\the\month.\the\day\@nil%
+  \fi%
 }}%
 \let\todayorig\today%
 \let\today\kian@today%
