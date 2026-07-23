@@ -1,0 +1,62 @@
+% kian-base.sty
+% Copyright (C) 2026  Shinichi Noro（野呂伸一）
+% Part of the kian-lua distribution, based on kian by Seiichiro HATA
+%   (https://hata-o.jp/kian/).
+%
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+%
+% LuaLaTeX 用 kian 互換レイヤー
+%
+% 目的：kian のサブ sty が pTeX 固有の skip レジスタとして使っていた
+%   \kanjiskip / \xkanjiskip をTeXスキップレジスタとして新規定義し、
+%   kian 内部の寸法計算・\hskip 等が動作するようにする。
+%
+% luatexja が管理する本物の kanjiskip（文字間自動グルー）は ltjsarticle が
+% 設定するものをそのまま使い、kian 内部用はこの互換レジスタで独立管理する。
+%
+% また uplatex 固有の \AtBeginDvi を安全に無効化し、kian-page で
+% 使われる dvipdfmx 専用特殊命令も luatexja では不要なため空定義する。
+
+\ProvidesPackage{kian-base}[2026/07/23 v1.0 kian LuaLaTeX compat layer]
+
+%==============================================================================%
+% LuaLaTeX / luatexja 確認
+
+\RequirePackage{iftex}
+\ifLuaTeX\else
+  \PackageError{kian-base}{kian-lua は LuaLaTeX 専用です}{}
+\fi
+
+%==============================================================================%
+% \kanjiskip / \xkanjiskip 互換スキップレジスタ
+%
+% kian-page.sty の初期化コード（96-100 行目）と同値で初期化する。
+% \zw は luatexja が ltjsarticle を読み込んだ時点で定義済み。
+
+\newskip\kanjiskip
+\newskip\xkanjiskip
+
+% kian-page.sty の初期値（jsarticle 標準相当）
+\kanjiskip=.03\zw plus .300\zw minus .030\zw
+\xkanjiskip=\kanjiskip
+\advance\xkanjiskip by +.5\zw\relax
+\setbox\z@=\hbox{0}\advance\xkanjiskip by -.5\wd\z@\relax
+
+%==============================================================================%
+% dvipdfmx 専用命令を luatexja では無効化
+
+% \AtBeginDvi は uplatex 用の hook（luatexja では不要）
+\@ifundefined{AtBeginDvi}{\newcommand{\AtBeginDvi}[1]{}}{}
+
+\endinput

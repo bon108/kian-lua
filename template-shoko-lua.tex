@@ -1,0 +1,71 @@
+% !TEX root = template-shoko-lua.tex
+% !TEX recipe = LuaLaTeX (kian-lua)
+% ============================================================
+%  証拠説明書テンプレート  (kian-v08 LuaLaTeX 版)
+%  コンパイル: latexmk -r latexmkrc-lua template-shoko-lua.tex
+%              または VS Code の「LuaLaTeX (kian-lua)」レシピ
+%  プレースホルダー: 【...】を実際の内容に置き換えてください
+%  甲号証（原告）→ \Tit{証拠説明書（甲）}
+%  乙号証（被告）→ \Tit{証拠説明書（乙）} に変更すること
+%  見出し番号: \SecZ=番号なし \SecA=第１ \SecB=１ \SecC=⑴ \SecD=ア \SecE=(ア)
+% ============================================================
+
+\documentclass{ltjsarticle}
+\usepackage{kian-lua}                % kian-lua/ を TEXINPUTS に含めてコンパイル
+% \usepackage{kian-ivs,luatexja-ruby}  % IVS 異体字（\ivs{文字}）・ルビ用
+\usepackage{array}                   % 表組み拡張
+
+% 証拠説明書用 行マクロ
+% 使い方: \shokorow{号証番号}{標目}{作成年月日}{作成者}{立証趣旨}
+\newcommand{\shokorow}[5]{%
+  #1 & #2 & #3 & #4 & #5 \\%
+}
+
+\Idcs{
+  [o]{R８(　)　　:【事件名】\\原告:【氏/名】:\\被告:【氏/名】}
+}
+
+\Tit{証拠説明書（甲）}
+\Dat{令和８年　　月　　日}
+\Recs{
+  [n]{:釧路地方裁判所【北見網走】支部:御中}
+}
+%\senderhlength{18}{4}{2}{10}% \senderhlength{①}{②}{③}{④}
+% ①左端からのインデント（開始位置）② （肩書幅）「弁護士」という肩書を配置するボックスの横幅です。③ （肩書と名前の間隔）「弁護士」と「名前」の間に空けるスペースの幅です。④（名前幅）「【氏名】」という名前を均等割り付け（配置）するボックスの横幅です。
+\Sens{
+  [0.5]{%
+    【原告被告】訴訟代理人/弁護士:【氏名】\\
+  }
+}
+
+% ============================================================
+
+\begin{document}
+
+\maketitle
+
+\vspace{1\zw}
+
+\noindent
+\begin{tabular}{|p{2.5\zw}|p{8\zw}|p{5\zw}|p{5\zw}|p{12\zw}|}
+  \hline
+  号証 & 標目 & 作成年月日 & 作成者 & 立証趣旨 \\
+  \hline\hline
+
+  \shokorow
+    {甲１}
+    {}
+    {令和８年　　月　　日}
+    {}
+    {}
+
+  \hline
+\end{tabular}
+
+\vspace{2\zw}
+
+\begin{flushright}
+以　上
+\end{flushright}
+
+\end{document}

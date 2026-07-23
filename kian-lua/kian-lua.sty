@@ -1,0 +1,116 @@
+% kian-lua.sty
+% 野呂伸一法律事務所 kian-v08 LuaLaTeX 移行版
+%
+% Copyright (C) 2016  Seiichiro HATA（原著 kian, https://hata-o.jp/kian/）
+% Modified 2026 by Shinichi Noro（野呂伸一）: adapted for LuaLaTeX (luatexja).
+%
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+%
+% 使い方（.tex のプリアンブル）:
+%   \documentclass{ltjsarticle}
+%   \usepackage{kian-lua}  % ← kian-lua/ を TEXINPUTS に含めてコンパイル
+%   \usepackage{kian-ivs}  % ← IVS 異体字を使う場合（任意）
+%
+%   ※ \usepackage{kian} も後方互換エイリアスとして利用可（kian.sty 参照）。
+%
+% コンパイル方法:
+%   TEXINPUTS=./kian-lua//:  lualatex yourfile.tex
+%   または latexmk（.latexmkrc 参照）
+
+%\NeedsTeXFormat{pLaTeX2e}%
+\ProvidesPackage{kian-lua}[2026/07/23 v08-lua "Tate-machi LuaLaTeX"]%
+
+%==============================================================================%
+% LuaLaTeX 専用パッケージ
+
+% luatexja-fontspec：和文フォント設定
+\RequirePackage{luatexja-fontspec}
+
+% luatexja-otf：\CID コマンドを LuaLaTeX で使えるようにする
+%   kian-opti が \CID{16270}（チェック付き□）等を使用
+\RequirePackage{luatexja-otf}
+
+% graphicx：kian-opti が \rotatebox 等を使用
+%   lualatex では driver オプション不要（自動検出）
+\RequirePackage{graphicx}
+
+% メインフォント（原ノ味明朝）
+\setmainjfont{HaranoAjiMincho-Regular}
+\gdef\kian@mainjfontset{}  % kian-ivs.sty との重複読み込み防止フラグ
+
+%==============================================================================%
+% kian 互換レイヤー（\kanjiskip / \xkanjiskip の TeX skip 定義）
+\RequirePackage{kian-base}
+
+%==============================================================================%
+% kian サブパッケージ（LuaLaTeX 変換済み版）
+
+\RequirePackage{kian-page}%
+\RequirePackage{kian-sect}%
+\RequirePackage{kian-titl}%
+\RequirePackage{kian-opti}%
+
+%==============================================================================%
+% luatexja 対応: kanjiskip 操作マクロを上書き
+%
+% kian-titl が定義する \kian@fillkanjiskips 等は kian の TeX skip レジスタのみ
+% 操作し、luatexja の文字間自動グルー（kanjiskip パラメータ）には影響しない。
+% そのため hbox 内の均等割りで文字間が広がらず、人名が詰まって見える問題が
+% 発生する。ここで luatexja パラメータも同期させる版に上書きする。
+
+% 固定（luatexja対応）
+\def\kian@fixkanjiskips{%
+  \dimen8=\kanjiskip\relax\dimen9=\xkanjiskip\relax%
+  \kanjiskip=\dimen8\relax\xkanjiskip=\dimen9\relax%
+  \edef\@kian@ltjksa{\the\dimen8}\edef\@kian@ltjksb{\the\dimen9}%
+  \ltjsetparameter{kanjiskip=\@kian@ltjksa}%
+  \ltjsetparameter{xkanjiskip=\@kian@ltjksb}%
+}%
+
+% 縮める（luatexja対応）
+\def\kian@shortenkanjiskips{%
+  \dimen8=\kanjiskip\relax\dimen9=\xkanjiskip\relax%
+  \kanjiskip=\z@ plus\dimen8\relax%
+  \xkanjiskip=.5\dimen9 plus.5\dimen9\relax%
+  \edef\@kian@ltjksa{\the\kanjiskip}\edef\@kian@ltjksb{\the\xkanjiskip}%
+  \ltjsetparameter{kanjiskip=\@kian@ltjksa}%
+  \ltjsetparameter{xkanjiskip=\@kian@ltjksb}%
+}%
+
+% 広げる（luatexja対応）
+\def\kian@lengthenkanjiskips{%
+  \dimen8=\kanjiskip\relax%
+  \advance\kanjiskip by\dimen8\relax%
+  \advance\xkanjiskip by\dimen8%
+  \edef\@kian@ltjksa{\the\kanjiskip}\edef\@kian@ltjksb{\the\xkanjiskip}%
+  \ltjsetparameter{kanjiskip=\@kian@ltjksa}%
+  \ltjsetparameter{xkanjiskip=\@kian@ltjksb}%
+}%
+
+% 無限に広げる（luatexja対応）
+\def\kian@fillkanjiskips{%
+  \advance\kanjiskip by\z@ plus1fil\relax%
+  \advance\xkanjiskip by\z@ plus1fil\relax%
+  \ltjsetparameter{kanjiskip=0pt plus 1fil}%
+  \ltjsetparameter{xkanjiskip=0pt plus 1fil}%
+}%
+
+% 文書開始時に kian の kanjiskip 値を luatexja パラメータに同期
+\AtBeginDocument{%
+  \edef\@kian@ltjksa{\the\kanjiskip}\edef\@kian@ltjksb{\the\xkanjiskip}%
+  \ltjsetparameter{kanjiskip=\@kian@ltjksa}%
+  \ltjsetparameter{xkanjiskip=\@kian@ltjksb}%
+}%
+
+\endinput

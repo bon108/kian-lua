@@ -1,0 +1,16 @@
+# latexmkrc-lua  -- LuaLaTeX 専用 latexmk 設定
+# kian-lua（LuaLaTeX 版 kian）向け
+#
+# 使い方（リポジトリのルートディレクトリで実行）:
+#   latexmk -r latexmkrc-lua yourfile-lua.tex
+#
+# ※ .latexmkrc（ドット付き）としてルートに置かないこと。
+#   ルートに置くと他の .tex ファイルまで意図せず lualatex で処理しようとして
+#   失敗することがある。
+
+$lualatex   = 'lualatex --interaction=nonstopmode %O %S';
+$pdf_mode   = 4;      # lualatex で直接 PDF 生成（DVI を経由しない）
+$bibtex_use = 0;      # 参考文献なし
+
+# kian-lua/ を TEXINPUTS に追加（リポジトリルートからの相対パス）
+ensure_path('TEXINPUTS', './kian-lua//', './');

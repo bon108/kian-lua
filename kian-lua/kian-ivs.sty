@@ -1,0 +1,81 @@
+% kian-ivs.sty
+% Copyright (C) 2026  Shinichi Noro（野呂伸一）
+% Part of the kian-lua distribution, based on kian by Seiichiro HATA
+%   (https://hata-o.jp/kian/).
+%
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+%
+% IVS（Ideographic Variation Sequence）異体字マクロ
+%
+% 使い方：
+%   \usepackage{kian-ivs}  （kian-lua/kian.sty から自動読み込み）
+%
+%   \ivs{角}  ← IVS セレクタ付きの「角」を直接エディタで入力する
+%              （ATOK や IME の「IVS の選択」機能で U+E0101 等を入力）
+%
+%   対応フォント：IPAmj明朝（ipamjm.ttf）
+%   メインフォント：原ノ味明朝（HaranoAjiMincho-Regular）
+%
+% IVS の仕組み：
+%   Moji_Joho コレクションは「IVS セレクタ（Unicode コードポイント）」で
+%   字形を指定する。例：「角」突き出し字形 = U+89D2 + U+E0101
+%   IPAmj明朝はこの IVS セレクタに対応しており、LuaLaTeX + luatexja で
+%   UTF-8 テキストとして直接扱える。
+
+\ProvidesPackage{kian-ivs}[2026/07/23 v1.0 kian IVS macro for LuaLaTeX]
+
+\RequirePackage{luatexja-fontspec}
+
+%==============================================================================%
+% メインフォント（原ノ味明朝）の設定
+% （kian.sty から読み込まれる場合は重複しないよう \@ifundefined を使用）
+
+\@ifundefined{kian@mainjfontset}{%
+  \setmainjfont{HaranoAjiMincho-Regular}%
+  \gdef\kian@mainjfontset{}%
+}{}
+
+%==============================================================================%
+% IPAmj明朝（異体字フォント）の定義
+%
+% \newjfontfamily を使用（日本語フォントとして定義）。
+% \newfontfamily（ラテン文字フォント扱い）では IVS セレクタが無効になる。
+
+\newjfontfamily\IPAmj{IPAmjMincho}
+
+%==============================================================================%
+% \ivs マクロ
+%
+% \ivs{角}  で引数をIPAmj明朝で出力する。
+% 引数にはエディタで入力した IVS セレクタ付き文字を直接記述する。
+% \ivs{} は局所フォントスコープなので前後の組版に影響しない。
+
+\newcommand{\ivs}[1]{{\IPAmj #1}}
+
+%==============================================================================%
+% 頻出異体字の定義例（運用しながら追記）
+%
+% 入力方法：ATOK「詳細変換」→「IVS」で IVS セレクタ付き文字を選択、
+%           VS Code では Character Map 等のプラグインから入力。
+% 文字は UTF-8 BOM なしで保存すること。
+%
+% 例：
+%   \newcommand{\KAKUv}{{\IPAmj 角}} ← この角には U+E0101 を追加してエディタで入力
+%
+% ※ 以下は定義例のコメントのみ。実際の IVS 文字はエディタで個別に入力すること。
+% \newcommand{\KAKUv}    {{\IPAmj 角}}  % 角（突き出し） Moji_Joho VS-2
+% \newcommand{\SAITOv}   {{\IPAmj 齋}}  % 齋藤の齋（旧字）
+% \newcommand{\WATANABEv}{{\IPAmj 渡}}  % 渡（波へん変形）等
+
+\endinput

@@ -1,0 +1,1663 @@
+% kian-sect.sty
+% Copyright (C) 2016-2021  Seiichiro HATA
+% Modified 2026 by Shinichi Noro（野呂伸一）: adapted for LuaLaTeX (luatexja).
+%
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+%\NeedsTeXFormat{pLaTeX2e}%
+\ProvidesPackage{kian-sect}[2021/07/14 v05]%
+
+%==============================================================================%
+% セクション
+
+% 予約語
+% \presectionZA-Gname \postsectionZA-Gname \gluesectionZA-Gname
+% \printsectionZA-G \PrintsectionZA-G
+
+% 用語の定義
+% セクションレベル：Z(0), A(1), B(2)…
+% セクション番号：1, 2, 3…
+% セクション記番号：第1, 第2, 第3…, 1, 2, 3…,(1), (2), (3)…
+% セクション標題：起, 承, 転…
+% セクション記番号標題：第1  起, 第2  承, 第3  転…
+
+%==========================================================%
+% 臨時カウンターの準備
+
+\@ifundefined{@tempcnta}{\newcount\@tempcnta}{}%
+\@ifundefined{@tempcntb}{\newcount\@tempcntb}{}%
+\@ifundefined{@tempcntc}{\newcount\@tempcntc}{}%
+
+%==========================================================%
+% 共通設定
+
+%======================================%
+% 漢字スキップ
+
+% 固定
+\def\kian@fixkanjiskips{%
+  \dimen8=\kanjiskip\relax\dimen9=\xkanjiskip\relax%
+  \kanjiskip=\dimen8\relax\xkanjiskip=\dimen9\relax%
+}%
+
+% 縮める
+\def\kian@shortenkanjiskips{%
+  \dimen8=\kanjiskip\relax\dimen9=\xkanjiskip\relax%
+  \kanjiskip=\z@ plus\dimen8\relax%
+  \xkanjiskip=.5\dimen9 plus.5\dimen9\relax%
+}%
+
+% 広げる
+\def\kian@lengthenkanjiskips{%
+  \dimen8=\kanjiskip\relax\dimen9=\xkanjiskip\relax%
+  \kanjiskip=\dimen8\relax\advance\kanjiskip by\dimen8 minus\dimen8\relax%
+  \xkanjiskip=\dimen9\relax\advance\xkanjiskip by\dimen8 minus\dimen8\relax%
+}%
+
+% 無限に広げる
+\def\kian@fillkanjiskips{%
+  \advance\kanjiskip by\z@ plus1fil\relax%
+  \advance\xkanjiskip by\z@ plus1fil\relax%
+}%
+
+%==========================================================%
+% 道具
+
+% 幅を測る
+\def\kian@sect@measurelength#1#2{{% #1:幅 #2:文字列
+  \dimen1=#1\relax\advance\dimen1 by-1.00\zw\relax%
+  \dimen2=#1\relax%
+  \dimen3=#1\relax\advance\dimen3 by+1.00\zw\relax%
+  \setbox1=\hbox{\kian@shortenkanjiskips\relax#2}%
+  \setbox2=\hbox{#2}%
+  \setbox3=\hbox{\kian@lengthenkanjiskips\relax#2}%
+  \ifdim\wd2>\dimen3%
+    \xdef\@kian@result{5}%
+  \else\ifdim\wd2>\dimen2%
+    \ifdim\wd3>\dimen3\xdef\@kian@result{4}\else\xdef\@kian@result{3}\fi%
+  \else\ifdim\wd2>\dimen1%
+    \ifdim\wd1>\dimen1\xdef\@kian@result{2}\else\xdef\@kian@result{1}\fi%
+  \else%
+    \xdef\@kian@result{0}\fi\fi\fi%
+}}%
+
+%==========================================================%
+% 改段落
+
+%======================================%
+% 通常改段落
+
+\def\kian@sect@normalpar{%
+  \endgraf%
+}%
+\let\par\kian@sect@normalpar%
+
+%======================================%
+% 箇条書きの臨時改段落（改段落を抑制）
+
+\def\kian@sect@itemizepar{%
+  \@ifnextchar\par{}{\let\par\endgraf%
+  \@ifnextchar\kian@itemonkian{%
+    \let\par\endgraf\leavevmode\endgraf}{%
+  \@ifnextchar\empty{\leavevmode}{%
+  \@ifnextchar\kian@sectionZ{\leavevmode}{%
+  \@ifnextchar\kian@sectionA{\leavevmode}{%
+  \@ifnextchar\kian@sectionB{\leavevmode}{%
+  \@ifnextchar\kian@sectionC{\leavevmode}{%
+  \@ifnextchar\kian@sectionD{\leavevmode}{%
+  \@ifnextchar\kian@sectionE{\leavevmode}{%
+  \@ifnextchar\kian@sectionF{\leavevmode}{%
+  \@ifnextchar\kian@sectionG{\leavevmode}{%
+  \@ifnextchar\kian@stateZ{\leavevmode}{%
+  \@ifnextchar\kian@stateA{\leavevmode}{%
+  \@ifnextchar\kian@stateB{\leavevmode}{%
+  \@ifnextchar\kian@stateC{\leavevmode}{%
+  \@ifnextchar\kian@stateD{\leavevmode}{%
+  \@ifnextchar\kian@stateE{\leavevmode}{%
+  \@ifnextchar\kian@stateF{\leavevmode}{%
+  \@ifnextchar\kian@stateG{\leavevmode}{%
+  \let\par\endgraf}}}}}}}}}}}}}}}}}}}%
+}%
+
+%======================================%
+% セクションの臨時改段落（改段落を抑制）
+
+\def\kian@sect@sectionpar{%
+  \@ifnextchar\par{}{%
+  \@ifnextchar\kian@sectionZ{}{\@ifnextchar\kian@sectionA{}{%
+  \@ifnextchar\kian@sectionB{}{\@ifnextchar\kian@sectionC{}{%
+  \@ifnextchar\kian@sectionD{}{\@ifnextchar\kian@sectionE{}{%
+  \@ifnextchar\kian@sectionF{}{\@ifnextchar\kian@sectionG{}{%
+  %\@ifnextchar\SecZ{}{\@ifnextchar\SecA{}{%
+  %\@ifnextchar\SecB{}{\@ifnextchar\SecC{}{%
+  %\@ifnextchar\SecD{}{\@ifnextchar\SecE{}{%
+  %\@ifnextchar\SecF{}{\@ifnextchar\SecG{}{%
+  \@ifnextchar\label{\kian@sect@sectionpar@AA}{%
+    % セクション記番号の表示
+    \kian@sect@Printsections{}\endgraf\nopagebreak\vskip-\baselineskip%
+    % 1行目の字下げの修正（「第1の1」のような場合に「第」や「の」の幅を下げる）
+    \ifnum\@kian@sect@sectionhlengthB<0%
+      \begingroup%
+        \@tempcnta=\@kian@sect@startstate\relax\advance\@tempcnta by100\relax\edef\@tempfuna{\the\@tempcnta}%
+        \@tempcntb=\@kian@sect@currentstate\edef\@tempfunb{\the\@tempcntb}%
+        \setbox9=\hbox{\kian@sect@printsections[-1]{\@tempfuna,\@tempfunb}%
+          {\the\c@kian@sectionZ,\the\c@kian@sectionA,\the\c@kian@sectionB,\the\c@kian@sectionC,%
+           \the\c@kian@sectionD,\the\c@kian@sectionE,\the\c@kian@sectionF,\the\c@kian@sectionG}{}}%
+        \dimen9=\wd9\relax\advance\dimen9 by-\kanjiskip\relax\advance\dimen9 by-\dimen3\relax%
+        \ifdim\dimen9>\z@\global\hangindent=\dimen9\global\hangafter=-1\relax\fi%
+      \endgroup%
+    \fi%
+  }}}}}}}}}}%}}}}}}}}%
+}%
+\def\kian@sect@sectionpar@AA\label#1{\label{#1}\kian@sect@sectionpar}%
+
+%==========================================================%
+% 字下げ
+
+%======================================%
+% セクションレベルを保存する関数
+
+\def\@kian@sect@startstate{-100}% 開始セクションレベル
+\def\@kian@sect@currentstate{0}% 現在セクションレベル
+
+%======================================%
+% 縦の長さの設定
+
+%======================================%
+% 横の長さの設定
+
+\def\kian@sectionhlength#1#2#3#4#5#6{%
+  \ifx\relax#1\relax\else\def\@kian@sect@sectionhlengthA{#1}\fi% 全体の字下げ
+  \ifx\relax#2\relax\else\def\@kian@sect@sectionhlengthB{#2}\fi% セクション記番号の幅
+  \ifx\relax#3\relax\else\def\@kian@sect@sectionhlengthC{#3}\fi% 箇条書き項目の字下げ
+  \ifx\relax#4\relax\else\def\@kian@sect@sectionhlengthD{#4}\fi% 箇条書き項目の幅
+  \ifx\relax#5\relax\else\def\@kian@sect@sectionhlengthE{#5}\fi% 本文全体の字下げ
+  \ifx\relax#6\relax\else\def\@kian@sect@sectionhlengthF{#6}\fi% 本文1行目の字下げ
+  \kian@sect@applysectionhlength%
+}%
+\def\@kian@sect@sectionhlengthA{0}%
+\def\@kian@sect@sectionhlengthB{-1}%
+\def\@kian@sect@sectionhlengthC{1}%
+\def\@kian@sect@sectionhlengthD{8}%
+\def\@kian@sect@sectionhlengthE{0}%
+\def\@kian@sect@sectionhlengthF{1}%
+%\kian@sectionhlength{0}{-1}{1}{8}{0}{1}%
+\@ifundefined{sectionhlength}{\let\sectionhlength\kian@sectionhlength}{}%
+
+% 短縮形
+\def\kian@downX#1{%
+  \ifx d#1\kian@sectionhlength{0}{}{}{}{}{}\else\kian@sectionhlength{#1}{}{}{}{}{}\fi%
+}%
+\def\kian@downY#1{%
+  \ifx d#1\kian@sectionhlength{}{}{}{8}{}{}\else\kian@sectionhlength{}{}{}{#1}{}{}\fi%
+}%
+\def\kian@downZ#1{%
+  \ifx d#1\kian@sectionhlength{}{}{}{}{}{1}\else\kian@sectionhlength{}{}{}{}{}{#1}\fi%
+}%
+\@ifundefined{downX}{\let\downX\kian@downX}{}%
+\@ifundefined{downY}{\let\downY\kian@downY}{}%
+\@ifundefined{downZ}{\let\downZ\kian@downZ}{}%
+\@ifundefined{DowX}{\let\DowX\kian@downX}{}%
+\@ifundefined{DowY}{\let\DowY\kian@downY}{}%
+\@ifundefined{DowZ}{\let\DowZ\kian@downZ}{}%
+
+%======================================%
+% 字下げを適用
+
+\def\kian@sect@applysectionhlength{%
+  % 単位長
+  \dimen0=1\zw\relax\advance\dimen0\kanjiskip\relax%
+  % 全体の字下げ
+  \dimen1=\@kian@sect@sectionhlengthA\dimen0\relax%
+  % セクション記番号の字下げ
+  \@tempcnta=\@kian@sect@startstate\relax%
+  \ifnum\@kian@sect@startstate>0%
+    \advance\@tempcnta by-1\relax% A以上なら1文字戻す
+    \ifnum\@kian@sect@currentstate>1\ifnum\c@kian@sectionA=0%
+      \advance\@tempcnta by-1\relax% B以上でAが0なら1文字戻す
+    \fi\fi%
+  \fi%
+  \ifdim\@kian@sect@sectionhlengthB pt=-1pt%
+    \dimen2=\dimen0\relax\else% セクション記番号の幅の設定がない場合（「-1」の場合）
+    \dimen2=\@kian@sect@sectionhlengthB\dimen0\relax\fi% セクション記番号の幅の設定がある場合
+  \multiply\dimen2 by\@tempcnta\relax%
+  % セクション記番号の幅
+  \@tempcnta=\@kian@sect@currentstate\relax\advance\@tempcnta by-\@kian@sect@startstate\relax%
+  \ifnum\@kian@sect@startstate>0%
+    \advance\@tempcnta by1\relax% A以上なら1文字進める
+  \else%
+    \ifnum\@kian@sect@currentstate>1\ifnum\c@kian@sectionA=0%
+      \advance\@tempcnta by-1\relax% B以上でAが0なら1文字戻す
+    \fi\fi%
+  \fi%
+  \ifnum\@kian@sect@sectionhlengthB=-1%
+    \dimen3=\dimen0\relax\else% セクション記番号の幅の設定がない場合（「-1」の場合）
+    \dimen3=\@kian@sect@sectionhlengthB\dimen0\relax\fi% セクション記番号の幅の設定がある場合
+  \multiply\dimen3 by\@tempcnta\relax%
+  %\advance\dimen3 by-\kanjiskip\relax%
+  % 箇条書き項目の字下げ
+  \ifnum\@kian@sect@currentstate=0%
+    \dimen4=\z@\relax\else%
+    \dimen4=\@kian@sect@sectionhlengthC\dimen0\relax\fi%
+  %\dimen4=\@kian@sect@sectionhlengthC\dimen0\relax%
+  \advance\dimen4 by\kanjiskip\relax%
+  % 箇条書き項目の幅
+  \dimen5=\@kian@sect@sectionhlengthD\dimen0\relax%
+  %\advance\dimen5 by-\kanjiskip\relax%
+  % 本文全体の字下げ
+  \dimen6=\@kian@sect@sectionhlengthE\dimen0\relax%
+  % 本文1行目の字下げ
+  \dimen7=\@kian@sect@sectionhlengthF\dimen0\relax%
+  %\advance\dimen7 by\kanjiskip\relax%
+  % 字下げを計算
+  \leftskip=\z@\relax%
+  \advance\leftskip by\dimen1\relax%
+  \advance\leftskip by\dimen2\relax%
+  \advance\leftskip by\dimen3\relax%
+  \expandafter\ifx\@kian@sect@itemize Y%
+    \advance\leftskip by\dimen4\relax%
+    \advance\leftskip by\dimen5\relax%
+  \fi%
+  \advance\leftskip by\dimen6\relax%
+  \parindent=\dimen7\relax%
+}%
+
+%==========================================================%
+% 箇条書きの設定
+
+%======================================%
+% 箇条書きのフラグ
+
+\xdef\@kian@sect@itemize{N}%
+
+%======================================%
+% 箇条書き
+
+\def\kian@itemonkian{%
+  % 表示
+  \@ifstar%
+    {\kian@sect@itemonkian@B}% 右寄せ文字列がある場合
+    {\kian@sect@itemonkian@A}% 右寄せ文字列がない場合
+}%
+\def\kian@sect@itemonkian@A{% 右寄せ文字列がない場合
+  % 箇条書きをセット
+  \xdef\@kian@sect@itemize{Y}%
+  % 字下げを適用
+  \kian@sect@applysectionhlength%
+  % 項目開始位置まで戻る
+  \hskip-\dimen7\relax% 本文1行目の字下げ（\parindent）
+  \hskip-\dimen6\relax% 本文全体の字下げ
+  \hskip-\dimen5\relax% 箇条書き項目の幅
+  % 表示
+  \@ifnextchar[{\kian@sect@itemonkian@AA}{\kian@sect@itemonkian@AA[]}%]
+}%
+\def\kian@sect@itemonkian@AA[#1]#2{{% #1:均等割付けの幅,右寄せする幅 #2:箇条書き項目
+  % 均等割付けの幅と右寄せする幅を確認
+  \kian@sect@itemonkian@C{#1}% \dimen8と\dimen9に均等割付けの幅と右寄せする幅を代入
+  \ifdim\dimen8<\z@%
+    % 均等割付けでない場合
+    \kian@sect@itemonkian@AB{#2}%
+  \else%
+    % 均等割付けである場合
+    \setbox8=\hbox{#2}%
+    \if\wd8>\dimen8%
+      % 均等割付けできない場合
+      \kian@sect@itemonkian@AB{#2}%
+    \else%
+      % 均等割付けできる場合
+      \kian@sect@itemonkian@AC{#2}%
+    \fi%
+  \fi%
+  % 形式的改段落
+  \endgraf\nopagebreak\vskip-\baselineskip%
+}\let\par\kian@sect@itemizepar\par}%
+\def\kian@sect@itemonkian@AB#1{{% #1:箇条書き項目
+  % 均等割付けしない場合
+  \dimen0=\dimen5\relax\advance\dimen0 by\dimen6\relax\advance\dimen0 by\dimen7\relax%
+  \advance\dimen0 by-\kanjiskip\relax%
+  \kian@sect@measurelength{\dimen0}{#1}%
+  \dimen2=\dimen0\relax%
+  \dimen1=\dimen2\relax\advance\dimen1 by-1.00\zw\relax%
+  \dimen3=\dimen2\relax\advance\dimen3 by+1.00\zw\relax%
+  \def\@tempfuna{\kian@sect@itemonkian@inhibitglue#1}%
+  %\def\@tempfuna{\globaldefs=1\relax#1}%
+  \ifcase\@kian@result%
+    % 大幅以下で（改行は不要）小幅以下の（間そのまま）場合
+    {\@tempfuna}\or%
+    % 大幅以下で（改行は不要）小幅よりも長い（間を縮める）場合
+    \leavevmode\hbox to\dimen1{\kian@shortenkanjiskips{\@tempfuna}}\or%
+    \leavevmode\hbox{\kian@shortenkanjiskips{\@tempfuna}}\or%
+    % 大幅よりも長く（改行が必要）長さが短い（間を伸ばす）場合
+    \leavevmode\hbox{\kian@lengthenkanjiskips{\@tempfuna}}\\\or%
+    \leavevmode\hbox to\dimen3{\kian@lengthenkanjiskips{\@tempfuna}}\\\or%
+    % 大幅よりも長く（改行が必要）長さが長い（間そのまま）場合
+    {\@tempfuna}\\\fi%
+}}%
+\def\kian@sect@itemonkian@inhibitglue{\inhibitglue}%
+\def\kian@sect@itemonkian@AC#1{{% #1:箇条書き項目
+  % 均等割付けする場合
+  \dimen0=\dimen5\relax\advance\dimen0 by\dimen6\relax\advance\dimen0 by\dimen7\relax%
+  % 表示
+  \def\@tempfuna{#1}%
+  %\def\@tempfuna{\globaldefs=1\relax#1}%
+  \leavevmode\hbox to\dimen8{\kian@fillkanjiskips{\@tempfuna}}%
+  % 改行
+  \ifdim\dimen8>\dimen0\\\fi%
+}}%
+\def\kian@sect@itemonkian@B{% 右寄せ文字列がある場合
+  % 箇条書きをアンセット
+  \xdef\@kian@sect@itemize{N}%
+  % 字下げを適用
+  \kian@sect@applysectionhlength%
+  % 表示
+  \@ifnextchar[{\kian@sect@itemonkian@BA}{\kian@sect@itemonkian@BA[]}%]
+}%
+\def\kian@sect@itemonkian@BA[#1]#2#3{{% #1:均等割付けの幅,右寄せする幅 #2:箇条書き項目 #3:右寄せ文字列
+  \kian@sect@itemonkian@C{#1}% \dimen8に均等割付けの幅を\dimen9に右寄せする幅を代入
+  \ifdim\dimen8<\z@%
+    % 均等割付けでない場合
+    \kian@sect@itemonkian@BB{#2}{#3}%
+  \else%
+    % 均等割付けである場合
+    \setbox8=\hbox{#2}%
+    \ifdim\wd8>\dimen8%
+      % 均等割付けできない場合
+      \kian@sect@itemonkian@BB{#2}{#3}%
+    \else%
+      % 均等割付けできる場合
+      \kian@sect@itemonkian@BC{#2}{#3}%
+    \fi%
+  \fi%
+}#3}%
+\def\kian@sect@itemonkian@BB#1#2{{% #1:箇条書き項目 #2:右寄せ文字列
+  % 均等割付けしない場合
+  \dimen0=\dimen5\relax\advance\dimen0 by\dimen6\relax\advance\dimen0 by\dimen7\relax\advance\dimen0 by\dimen9\relax%
+  \kian@sect@measurelength{\dimen0}{#1#2}%
+  \dimen2=\dimen0\relax\setbox2=\hbox{#2}\advance\dimen2 by-\wd2\relax%
+  \dimen1=\dimen2\relax\advance\dimen1 by-1.00\zw\relax%
+  \dimen3=\dimen2\relax\advance\dimen3 by+1.00\zw\relax%
+  \hskip-\dimen7\hskip\dimen4\relax% 字下げは箇条書き項目の字下げ
+  \ifcase\@kian@result%
+    % 大幅以下で（改行は不要）小幅以下の（間そのまま）場合
+    \leavevmode\hbox{#1}\or%
+    % 大幅以下で（改行は不要）小幅よりも長い（間を縮める）場合
+    \leavevmode\hbox to\dimen1{\kian@shortenkanjiskips#1}\or%
+    \leavevmode\hbox{\kian@shortenkanjiskips#1}\or%
+    % 大幅よりも長く（改行が必要）長さが短い（間を伸ばす）場合
+    \leavevmode\hbox to\dimen3{\kian@lengthenkanjiskips#1}\\\or%
+    \leavevmode\hbox{\kian@lengthenkanjiskips#1}\\\or%
+    % 大幅よりも長く（改行が必要）長さが長い（間そのまま）場合
+    {\kian@sect@applysectionhlength\dimen0=\textwidth%
+      \advance\dimen0by-\dimen1\advance\dimen0by-\dimen2%
+      \advance\dimen0by-\dimen3\advance\dimen0by-\dimen4%
+      \setbox0=\hbox{#1}%
+      \ifdim\wd0<\dimen0%
+        % 箇条書き項目が行に収まる場合
+        \leavevmode\hbox{#1}\else%
+        % 箇条書き項目が行に収まらない場合
+        % todo: 行頭が括弧の場合にカーニングできない
+        % todo: 2行目以下は「箇条書き項目の字下げ」がなくなる
+        \leavevmode{#1}\fi}%
+    \\\fi%
+  \\[-\baselineskip]\hskip\dimen4\ifdim\wd2<\dimen0\advance\dimen0 by-\wd2\relax\hskip\dimen0\relax\fi%
+}}%
+\def\kian@sect@itemonkian@BC#1#2{{% #1:箇条書き項目 #2:右寄せ文字列
+  % 均等割付けする場合
+  \dimen0=\dimen5\relax\advance\dimen0 by\dimen6\relax\advance\dimen0 by\dimen7\relax\advance\dimen0 by\dimen9\relax%
+  \dimen1=\dimen8\relax\setbox1=\hbox{#2}\advance\dimen1 by\wd1\relax%
+  \setbox2=\hbox{#2}%
+  % 表示
+  \ifdim\dimen1>\dimen0%
+    % 改行が必要な場合
+    \leavevmode\hbox to\dimen8{\kian@fillkanjiskips#1}\\%
+  \else%
+    % 改行が不要な場合
+    \leavevmode\hbox to\dimen8{\kian@fillkanjiskips#1}%
+  \fi%
+  \\[-\baselineskip]\hskip\dimen4\ifdim\wd2<\dimen0\advance\dimen0 by-\wd2\relax\hskip\dimen0\relax\fi%
+}}%
+\def\kian@sect@itemonkian@C#1{% #1:均等割付けの幅,右寄せする幅
+  \@tempcnta=0\xdef\@tempfuna{}\xdef\@tempfunb{14}%
+  \@for\@tempfunc:=#1\do{%
+    \ifcase\@tempcnta%
+      \edef\@tempfuna{\@tempfunc}\or%
+      \edef\@tempfunb{\@tempfunc}\fi%
+    \advance\@tempcnta by1\relax%
+  }%
+  \expandafter\ifx\expandafter\relax\@tempfuna\relax\def\@tempfuna{-1}\fi%
+  \dimen8=1\zw\relax\advance\dimen8 by\kanjiskip\relax%
+  \dimen8=\@tempfuna\dimen8\relax\advance\dimen8 by-\kanjiskip\relax%
+  \expandafter\ifx\expandafter\relax\@tempfunb\relax\def\@tempfunb{-1}\fi%
+  \dimen9=1\zw\relax\advance\dimen9 by\kanjiskip\relax%
+  \dimen9=\@tempfunb\dimen9\relax\advance\dimen9 by-\kanjiskip\relax%
+}%
+\@ifundefined{itemonkian}{\let\itemonkian\kian@itemonkian}{}%
+\@ifundefined{Ite}{\let\Ite\kian@itemonkian}{}%
+
+%==========================================================%
+% セクションカウンター
+
+%======================================%
+% セクションカウンターを定義
+
+\@ifundefined{c@part}{\newcount\c@kian@sectionZ}{\let\c@kian@sectionZ\c@part}\c@kian@sectionZ=0%
+\@ifundefined{c@chapter}{\newcount\c@kian@sectionA}{\let\c@kian@sectionA\c@chapter}\c@kian@sectionA=0%
+\@ifundefined{c@section}{\newcount\c@kian@sectionB}{\let\c@kian@sectionB\c@section}\c@kian@sectionB=0%
+\@ifundefined{c@subsection}{\newcount\c@kian@sectionC}{\let\c@kian@sectionC\c@subsection}\c@kian@sectionC=0%
+\@ifundefined{c@subsubsection}{\newcount\c@kian@sectionD}{\let\c@kian@sectionD\c@subsubsection}\c@kian@sectionD=0%
+\@ifundefined{c@paragraph}{\newcount\c@kian@sectionE}{\let\c@kian@sectionE\c@paragraph}\c@kian@sectionE=0%
+\@ifundefined{c@subparagraph}{\newcount\c@kian@sectionF}{\let\c@kian@sectionF\c@subparagraph}\c@kian@sectionF=0%
+\@ifundefined{c@subsubparagraph}{\newcount\c@kian@sectionG}{\let\c@kian@sectionG\c@subsubparagraph}\c@kian@sectionG=0%
+%\newcount\c@kian@sectionA\c@kian@sectionA=0%
+%\newcount\c@kian@sectionB\c@kian@sectionB=0%
+%\newcount\c@kian@sectionC\c@kian@sectionC=0%
+%\newcount\c@kian@sectionD\c@kian@sectionD=0%
+%\newcount\c@kian@sectionE\c@kian@sectionE=0%
+%\newcount\c@kian@sectionF\c@kian@sectionF=0%
+%\newcount\c@kian@sectionG\c@kian@sectionG=0%
+\@ifundefined{c@sectionZ}{\let\c@sectionZ\c@kian@sectionZ}{}%
+\@ifundefined{c@sectionA}{\let\c@sectionA\c@kian@sectionA}{}%
+\@ifundefined{c@sectionB}{\let\c@sectionB\c@kian@sectionB}{}%
+\@ifundefined{c@sectionC}{\let\c@sectionC\c@kian@sectionC}{}%
+\@ifundefined{c@sectionD}{\let\c@sectionD\c@kian@sectionD}{}%
+\@ifundefined{c@sectionE}{\let\c@sectionE\c@kian@sectionE}{}%
+\@ifundefined{c@sectionF}{\let\c@sectionF\c@kian@sectionF}{}%
+\@ifundefined{c@sectionG}{\let\c@sectionG\c@kian@sectionG}{}%
+
+% 関連性
+\begingroup\let\@elt\relax%
+  \xdef\cl@kian@sectionZ{\@elt{kian@sectionA}}%
+  \xdef\cl@kian@sectionA{\@elt{kian@sectionB}}%
+  \xdef\cl@kian@sectionB{\@elt{kian@sectionC}}%
+  \xdef\cl@kian@sectionC{\@elt{kian@sectionD}}%
+  \xdef\cl@kian@sectionD{\@elt{kian@sectionE}}%
+  \xdef\cl@kian@sectionE{\@elt{kian@sectionF}}%
+  \xdef\cl@kian@sectionF{\@elt{kian@sectionG}}%
+\endgroup%
+
+%======================================%
+% セクションカウンターを進める
+
+\def\kian@sect@stepsectionvalue#1{% #1:セクションレベル
+  \ifcase#1%
+    \advance\c@kian@sectionZ by1\relax\or%
+    \advance\c@kian@sectionA by1\relax\or%
+    \advance\c@kian@sectionB by1\relax\or%
+    \advance\c@kian@sectionC by1\relax\or%
+    \advance\c@kian@sectionD by1\relax\or%
+    \advance\c@kian@sectionE by1\relax\or%
+    \advance\c@kian@sectionF by1\relax\or%
+    \advance\c@kian@sectionG by1\relax\fi%
+  \ifnum#1<1\c@kian@sectionA=0\fi%
+  \ifnum#1<2\c@kian@sectionB=0\fi%
+  \ifnum#1<3\c@kian@sectionC=0\fi%
+  \ifnum#1<4\c@kian@sectionD=0\fi%
+  \ifnum#1<5\c@kian@sectionE=0\fi%
+  \ifnum#1<6\c@kian@sectionF=0\fi%
+  \ifnum#1<7\c@kian@sectionG=0\fi%
+}%
+
+%==========================================================%
+% セクション記番号（標題）の上の縦空白
+
+%======================================%
+% 縦空白の幅の設定
+
+\def\kian@sect@separateZ{\@ifstar{\kian@sect@separateZ@B}{\kian@sect@separateZ@A}}%
+\def\kian@sect@separateZ@A#1{\def\@kian@sect@separateZ{#1}}%
+\def\kian@sect@separateZ@B#1{\def\@kian@sect@separateZ@star{#1}}%
+\def\kian@sect@separateA{\@ifstar{\kian@sect@separateA@B}{\kian@sect@separateA@A}}%
+\def\kian@sect@separateA@A#1{\def\@kian@sect@separateA{#1}}%
+\def\kian@sect@separateA@B#1{\def\@kian@sect@separateA@star{#1}}%
+\def\kian@sect@separateB{\@ifstar{\kian@sect@separateB@B}{\kian@sect@separateB@A}}%
+\def\kian@sect@separateB@A#1{\def\@kian@sect@separateB{#1}}%
+\def\kian@sect@separateB@B#1{\def\@kian@sect@separateB@star{#1}}%
+\def\kian@sect@separateC{\@ifstar{\kian@sect@separateC@B}{\kian@sect@separateC@A}}%
+\def\kian@sect@separateC@A#1{\def\@kian@sect@separateC{#1}}%
+\def\kian@sect@separateC@B#1{\def\@kian@sect@separateC@star{#1}}%
+\def\kian@sect@separateD{\@ifstar{\kian@sect@separateD@B}{\kian@sect@separateD@A}}%
+\def\kian@sect@separateD@A#1{\def\@kian@sect@separateD{#1}}%
+\def\kian@sect@separateD@B#1{\def\@kian@sect@separateD@star{#1}}%
+\def\kian@sect@separateE{\@ifstar{\kian@sect@separateE@B}{\kian@sect@separateE@A}}%
+\def\kian@sect@separateE@A#1{\def\@kian@sect@separateE{#1}}%
+\def\kian@sect@separateE@B#1{\def\@kian@sect@separateE@star{#1}}%
+\def\kian@sect@separateF{\@ifstar{\kian@sect@separateF@B}{\kian@sect@separateF@A}}%
+\def\kian@sect@separateF@A#1{\def\@kian@sect@separateF{#1}}%
+\def\kian@sect@separateF@B#1{\def\@kian@sect@separateF@star{#1}}%
+\def\kian@sect@separateG{\@ifstar{\kian@sect@separateG@B}{\kian@sect@separateG@A}}%
+\def\kian@sect@separateG@A#1{\def\@kian@sect@separateG{#1}}%
+\def\kian@sect@separateG@B#1{\def\@kian@sect@separateG@star{#1}}%
+\@ifundefined{separateZ}{\let\separateZ\kian@sect@separateZ}{}%
+\@ifundefined{separateA}{\let\separateA\kian@sect@separateA}{}%
+\@ifundefined{separateB}{\let\separateB\kian@sect@separateB}{}%
+\@ifundefined{separateC}{\let\separateC\kian@sect@separateC}{}%
+\@ifundefined{separateD}{\let\separateD\kian@sect@separateD}{}%
+\@ifundefined{separateE}{\let\separateE\kian@sect@separateE}{}%
+\@ifundefined{separateF}{\let\separateF\kian@sect@separateF}{}%
+\@ifundefined{separateG}{\let\separateG\kian@sect@separateG}{}%
+\@ifundefined{SepZ}{\let\SepZ\kian@sect@separateZ}{}%
+\@ifundefined{SepA}{\let\SepA\kian@sect@separateA}{}%
+\@ifundefined{SepB}{\let\SepB\kian@sect@separateB}{}%
+\@ifundefined{SepC}{\let\SepC\kian@sect@separateC}{}%
+\@ifundefined{SepD}{\let\SepD\kian@sect@separateD}{}%
+\@ifundefined{SepE}{\let\SepE\kian@sect@separateE}{}%
+\@ifundefined{SepF}{\let\SepF\kian@sect@separateF}{}%
+\@ifundefined{SepG}{\let\SepG\kian@sect@separateG}{}%
+\def\@kian@sect@separateZ{1}%
+\def\@kian@sect@separateA{1}%
+\def\@kian@sect@separateB{\ifnum\c@kian@sectionA=0 1\else 0\fi}%
+\def\@kian@sect@separateC{0}%
+\def\@kian@sect@separateD{0}%
+\def\@kian@sect@separateE{0}%
+\def\@kian@sect@separateF{0}%
+\def\@kian@sect@separateG{0}%
+\def\@kian@sect@separateZ@star{1}%
+\def\@kian@sect@separateA@star{0}%
+\def\@kian@sect@separateB@star{0}%
+\def\@kian@sect@separateC@star{0}%
+\def\@kian@sect@separateD@star{0}%
+\def\@kian@sect@separateE@star{0}%
+\def\@kian@sect@separateF@star{0}%
+\def\@kian@sect@separateG@star{0}%
+
+%==========================================================%
+% セクション記番号の出力
+
+%======================================%
+% セクション記番号の前修飾の定義
+
+\def\presectionZname{}%
+\def\presectionAname{{第}}%"
+\def\presectionBname{}%
+\def\presectionCname{}%
+\def\presectionDname{}%
+\def\presectionEname{}%
+\def\presectionFname{}%
+\def\presectionGname{}%
+
+%======================================%
+% セクション記番号の核心の定義
+
+% 算用数字
+\def\kian@arabic#1{{% #1:番号
+  #1%
+}}%
+\@ifundefined{arabic}{\def\arabic#1{\kian@arabic{#1}}}{}%
+
+% 漢数字
+\def\kian@kansuji#1{{% #1:番号
+  \ifcase#1{〇}\or%"                                                                        〇
+    {一}\or{二}\or{三}\or{四}\or{五}\or%"   一-五
+    {六}\or{七}\or{八}\or{九}\or{十}\else%" 六-十
+\errmessage{Package kian-sect Error: Overflow of kansuji "#1"}\fi}}%
+\@ifundefined{kansuji}{\def\kansuji#1{\kian@kansuji{#1}}}{}%
+
+% カタカナ
+\def\kian@kata#1{{% #1:番号
+  \ifcase#1{ン}\or%"                                                                      ン
+    {ア}\or{イ}\or{ウ}\or{エ}\or{オ}\or%" ア-オ
+    {カ}\or{キ}\or{ク}\or{ケ}\or{コ}\or%" カ-コ
+    {サ}\or{シ}\or{ス}\or{セ}\or{ソ}\or%" サ-ソ
+    {タ}\or{チ}\or{ツ}\or{テ}\or{ト}\or%" タ-ト
+    {ナ}\or{ニ}\or{ヌ}\or{ネ}\or{ノ}\or%" ナ-ノ
+    {ハ}\or{ヒ}\or{フ}\or{ヘ}\or{ホ}\or%" ハ-ホ
+    {マ}\or{ミ}\or{ム}\or{メ}\or{モ}\or%" マ-モ
+    {ヤ}\or{ユ}\or{ヨ}\or%"                                       ヤ-ヨ
+    {ラ}\or{リ}\or{ル}\or{レ}\or{ロ}\or%" ラ-ロ
+    {ワ}\or{ヰ}\or{ヱ}\or{ヲ}\or%"                    ワ-ヲ
+    {ン}\else%"                                                                           ン
+\errmessage{Package kian-sect Error: Overflow of katakana "#1"}\fi}}%
+\@ifundefined{kata}{\def\kata#1{\kian@kata{#1}}}{}%
+
+% 小文字アルファベット
+\def\kian@alph#1{{% #1:番号
+  \ifcase#1z\or%
+    a\or b\or c\or d\or e\or f\or g\or h\or i\or j\or%
+    k\or l\or m\or n\or o\or p\or q\or r\or s\or t\or%
+    u\or v\or w\or x\or y\or z\else%
+\errmessage{Package kian-sect Error: Overflow of alphabet "#1"}\fi}}%
+\@ifundefined{alph}{\def\alph#1{\kian@alph{#1}}}{}%
+
+% 大文字アルファベット
+\def\kian@Alph#1{{% #1:番号
+  \ifcase#1Z\or%
+    A\or B\or C\or D\or E\or F\or G\or H\or I\or J\or%
+    K\or L\or M\or N\or O\or P\or Q\or R\or S\or T\or%
+    U\or V\or W\or X\or Y\or Z\else%
+\errmessage{Package kian-sect Error: Overflow of Alphabet "#1"}\fi}}%
+\@ifundefined{Alph}{\def\Alph#1{\kian@Alph{#1}}}{}%
+
+% 小文字ローマ数字
+\def\kian@roman#1{{% #1:番号
+  \ifcase#1\or%
+                  i\or               i{\hskip-.1\zw}i\or               i{\hskip-.1\zw}i{\hskip-.1\zw}i\or               i{\hskip-.1\zw}v\or               v\or%
+    v{\hskip-.1\zw}i\or v{\hskip-.1\zw}i{\hskip-.1\zw}i\or v{\hskip-.1\zw}i{\hskip-.1\zw}i{\hskip-.1\zw}i\or               i{\hskip-.1\zw}x\or               x\or%
+    x{\hskip-.1\zw}i\or x{\hskip-.1\zw}i{\hskip-.1\zw}i\or x{\hskip-.1\zw}i{\hskip-.1\zw}i{\hskip-.1\zw}i\or x{\hskip-.1\zw}i{\hskip-.1\zw}v\or x{\hskip-.1\zw}v\else%
+\errmessage{Package kian-sect Error: Overflow of roman numerals "#1"}\fi}}%
+\@ifundefined{roman}{\def\roman#1{\kian@roman{#1}}}{}%
+
+% 大文字ローマ数字
+\def\kian@Roman#1{{% #1:番号
+  \ifcase#1\or%
+                  I\or               I{\hskip-.1\zw}I\or               I{\hskip-.1\zw}I{\hskip-.1\zw}I\or               I{\hskip-.1\zw}V\or               V\or%
+    V{\hskip-.1\zw}I\or V{\hskip-.1\zw}I{\hskip-.1\zw}I\or V{\hskip-.1\zw}I{\hskip-.1\zw}I{\hskip-.1\zw}I\or               I{\hskip-.1\zw}X\or               X\or%
+    X{\hskip-.1\zw}I\or X{\hskip-.1\zw}I{\hskip-.1\zw}I\or X{\hskip-.1\zw}I{\hskip-.1\zw}I{\hskip-.1\zw}I\or X{\hskip-.1\zw}I{\hskip-.1\zw}V\or X{\hskip-.1\zw}V\else%
+\errmessage{Package kian-sect Error: Overflow of Roman numerals "#1"}\fi}}%
+\@ifundefined{Roman}{\def\Roman#1{\kian@Roman{#1}}}{}%
+
+% 通常文字
+\def\kian@ks@#1{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss#1\hss}}%
+\def\kian@ksArabic#1{\kian@ks@{\kian@arabic{#1}}}%
+\@ifundefined{ksArabic}{\def\ksArabic#1{\kian@ksArabic{#1}}}{}%
+\def\kian@ksKansuji#1{\kian@ks@{\kian@kansuji{#1}}}%
+\@ifundefined{ksKansuji}{\def\ksKansuji#1{\kian@ksKansuji{#1}}}{}%
+\def\kian@ksKata#1{\kian@ks@{\kian@kata{#1}}}%
+\@ifundefined{ksKata}{\def\ksKata#1{\kian@ksKata{#1}}}{}%
+\def\kian@ksalph#1{\kian@ks@{\kian@alph{#1}}}%
+\@ifundefined{ksalph}{\def\ksalph#1{\kian@ksalph{#1}}}{}%
+\def\kian@ksAlph#1{\kian@ks@{\kian@Alph{#1}}}%
+\@ifundefined{ksAlph}{\def\ksAlph#1{\kian@ksAlph{#1}}}{}%
+\def\kian@ksroman#1{\kian@ks@{\kian@roman{#1}}}%
+\@ifundefined{ksroman}{\def\ksroman#1{\kian@ksroman{#1}}}{}%
+\def\kian@ksRoman#1{\kian@ks@{\kian@Roman{#1}}}%
+\@ifundefined{ksRoman}{\def\ksRoman#1{\kian@ksRoman{#1}}}{}%
+
+% 丸囲み文字
+\def\kian@ksMaru@#1{{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss%
+  \raisebox{.08\zw}{\textcircled{\raisebox{-.06\zw}{\footnotesize#1}}}%
+\hss}}}%
+\def\kian@ksMaruArabic#1{\kian@ksMaru@{\kian@arabic{#1}}}%
+\@ifundefined{ksMaruArabic}{\def\ksMaruArabic#1{\kian@ksMaruArabic{#1}}}{}%
+\def\kian@ksMaruKansuji#1{\kian@ksMaru@{\kian@kansuji{#1}}}%
+\@ifundefined{ksMaruKansuji}{\def\ksMaruKansuji#1{\kian@ksMaruKansuji{#1}}}{}%
+\def\kian@ksMaruKata#1{\kian@ksMaru@{\kian@kata{#1}}}%
+\@ifundefined{ksMaruKata}{\def\ksMaruKata#1{\kian@ksMaruKata{#1}}}{}%
+\def\kian@ksMarualph#1{\kian@ksMaru@{\kian@alph{#1}}}%
+\@ifundefined{ksMarualph}{\def\ksMarualph#1{\kian@ksMarualph{#1}}}{}%
+\def\kian@ksMaruAlph#1{\kian@ksMaru@{\kian@Alph{#1}}}%
+\@ifundefined{ksMaruAlph}{\def\ksMaruAlph#1{\kian@ksMaruAlph{#1}}}{}%
+\def\kian@ksMaruroman#1{\kian@ksMaru@{\kian@roman{#1}}}%
+\@ifundefined{ksMaruroman}{\def\ksMaruroman#1{\kian@ksMaruroman{#1}}}{}%
+\def\kian@ksMaruRoman#1{\kian@ksMaru@{\kian@Roman{#1}}}%
+\@ifundefined{ksMaruRoman}{\def\ksMaruRoman#1{\kian@ksMaruRoman{#1}}}{}%
+
+% 括弧囲み文字
+\def\kian@ksKakko@#1{{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss(#1)\hss}}}%
+\def\kian@ksKakkoArabic#1{\kian@ksKakko@{\kian@arabic{#1}}}%
+\@ifundefined{ksKakkoArabic}{\def\ksKakkoArabic#1{\kian@ksKakkoArabic{#1}}}{}%
+\def\kian@ksKakkoKansuji#1{\kian@ksKakko@{\kian@kansuji{#1}}}%
+\@ifundefined{ksKakkoKansuji}{\def\ksKakkoKansuji#1{\kian@ksKakkoKansuji{#1}}}{}%
+\def\kian@ksKakkoKata#1{\kian@ksKakko@{\kian@kata{#1}}}%
+\@ifundefined{ksKakkoKata}{\def\ksKakkoKata#1{\kian@ksKakkoKata{#1}}}{}%
+\def\kian@ksKakkoalph#1{\kian@ksKakko@{\kian@alph{#1}}}%
+\@ifundefined{ksKakkoalph}{\def\ksKakkoalph#1{\kian@ksKakkoalph{#1}}}{}%
+\def\kian@ksKakkoAlph#1{\kian@ksKakko@{\kian@Alph{#1}}}%
+\@ifundefined{ksKakkoAlph}{\def\ksKakkoAlph#1{\kian@ksKakkoAlph{#1}}}{}%
+\def\kian@ksKakkoroman#1{\kian@ksKakko@{\kian@roman{#1}}}%
+\@ifundefined{ksKakkoroman}{\def\ksKakkoroman#1{\kian@ksKakkoroman{#1}}}{}%
+\def\kian@ksKakkoRoman#1{\kian@ksKakko@{\kian@Roman{#1}}}%
+\@ifundefined{ksKakkoRoman}{\def\ksKakkoRoman#1{\kian@ksKakkoRoman{#1}}}{}%
+
+% 括弧付き文字
+\def\kian@kskakko@#1{{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss#1)\hskip\z@}}}% \hskipは\xkanjiskip排除
+\def\kian@kskakkoArabic#1{\kian@kskakko@{\kian@arabic{#1}}}%
+\@ifundefined{kskakkoArabic}{\def\kskakkoArabic#1{\kian@kskakkoArabic{#1}}}{}%
+\def\kian@kskakkoKansuji#1{\kian@kskakko@{\kian@kansuji{#1}}}%
+\@ifundefined{kskakkoKansuji}{\def\kskakkoKansuji#1{\kian@kskakkoKansuji{#1}}}{}%
+\def\kian@kskakkoKata#1{\kian@kskakko@{\kian@kata{#1}}}%
+\@ifundefined{kskakkoKata}{\def\kskakkoKata#1{\kian@kskakkoKata{#1}}}{}%
+\def\kian@kskakkoalph#1{\kian@kskakko@{\kian@alph{#1}}}%
+\@ifundefined{kskakkoalph}{\def\kskakkoalph#1{\kian@kskakkoalph{#1}}}{}%
+\def\kian@kskakkoAlph#1{\kian@kskakko@{\kian@Alph{#1}}}%
+\@ifundefined{kskakkoAlph}{\def\kskakkoAlph#1{\kian@kskakkoAlph{#1}}}{}%
+\def\kian@kskakkoroman#1{\kian@kskakko@{\kian@roman{#1}}}%
+\@ifundefined{kskakkoroman}{\def\kskakkoroman#1{\kian@kskakkoroman{#1}}}{}%
+\def\kian@kskakkoRoman#1{\kian@kskakko@{\kian@Roman{#1}}}%
+\@ifundefined{kskakkoRoman}{\def\kskakkoRoman#1{\kian@kskakkoRoman{#1}}}{}%
+
+% ドット付き文字
+\def\kian@ksDot@#1{{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss#1.\hskip\z@}}}% \hskipは\xkanjiskip排除
+\def\kian@ksDotArabic#1{\kian@ksDot@{\kian@arabic{#1}}}%
+\@ifundefined{ksDotArabic}{\def\ksDotArabic#1{\kian@ksDotArabic{#1}}}{}%
+\def\kian@ksDotKansuji#1{\kian@ksDot@{\kian@kansuji{#1}}}%
+\@ifundefined{ksDotKansuji}{\def\ksDotKansuji#1{\kian@ksDotKansuji{#1}}}{}%
+\def\kian@ksDotKata#1{\kian@ksDot@{\kian@kata{#1}}}%
+\@ifundefined{ksDotKata}{\def\ksDotKata#1{\kian@ksDotKata{#1}}}{}%
+\def\kian@ksDotalph#1{\kian@ksDot@{\kian@alph{#1}}}%
+\@ifundefined{ksDotalph}{\def\ksDotalph#1{\kian@ksDotalph{#1}}}{}%
+\def\kian@ksDotAlph#1{\kian@ksDot@{\kian@Alph{#1}}}%
+\@ifundefined{ksDotAlph}{\def\ksDotAlph#1{\kian@ksDotAlph{#1}}}{}%
+\def\kian@ksDotroman#1{\kian@ksDot@{\kian@roman{#1}}}%
+\@ifundefined{ksDotroman}{\def\ksDotroman#1{\kian@ksDotroman{#1}}}{}%
+\def\kian@ksDotRoman#1{\kian@ksDot@{\kian@Roman{#1}}}%
+\@ifundefined{ksDotRoman}{\def\ksDotRoman#1{\kian@ksDotRoman{#1}}}{}%
+
+% コロン付き文字
+\def\kian@ksColon@#1{{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss#1:\hskip\z@}}}% \hskipは\xkanjiskip排除
+\def\kian@ksColonArabic#1{\kian@ksColon@{\kian@arabic{#1}}}%
+\@ifundefined{ksColonArabic}{\def\ksColonArabic#1{\kian@ksColonArabic{#1}}}{}%
+\def\kian@ksColonKansuji#1{\kian@ksColon@{\kian@kansuji{#1}}}%
+\@ifundefined{ksColonKansuji}{\def\ksColonKansuji#1{\kian@ksColonKansuji{#1}}}{}%
+\def\kian@ksColonKata#1{\kian@ksColon@{\kian@kata{#1}}}%
+\@ifundefined{ksColonKata}{\def\ksColonKata#1{\kian@ksColonKata{#1}}}{}%
+\def\kian@ksColonalph#1{\kian@ksColon@{\kian@alph{#1}}}%
+\@ifundefined{ksColonalph}{\def\ksColonalph#1{\kian@ksColonalph{#1}}}{}%
+\def\kian@ksColonAlph#1{\kian@ksColon@{\kian@Alph{#1}}}%
+\@ifundefined{ksColonAlph}{\def\ksColonAlph#1{\kian@ksColonAlph{#1}}}{}%
+\def\kian@ksColonroman#1{\kian@ksColon@{\kian@roman{#1}}}%
+\@ifundefined{ksColonroman}{\def\ksColonroman#1{\kian@ksColonroman{#1}}}{}%
+\def\kian@ksColonRoman#1{\kian@ksColon@{\kian@Roman{#1}}}%
+\@ifundefined{ksColonRoman}{\def\ksColonRoman#1{\kian@ksColonRoman{#1}}}{}%
+
+% 第*
+\def\kian@ksDai@#1{{第\hskip\kanjiskip\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss#1\hss}}}%
+\def\kian@ksDaiArabic#1{\kian@ksDai@{\kian@arabic{#1}}}%
+\@ifundefined{ksDaiArabic}{\def\ksDaiArabic#1{\kian@ksDaiArabic{#1}}}{}%
+\def\kian@ksDaiKansuji#1{\kian@ksDai@{\kian@kansuji{#1}}}%
+\@ifundefined{ksDaiKansuji}{\def\ksDaiKansuji#1{\kian@ksDaiKansuji{#1}}}{}%
+\def\kian@ksDaiKata#1{\kian@ksDai@{\kian@kata{#1}}}%
+\@ifundefined{ksDaiKata}{\def\ksDaiKata#1{\kian@ksDaiKata{#1}}}{}%
+\def\kian@ksDaialph#1{\kian@ksDai@{\kian@alph{#1}}}%
+\@ifundefined{ksDaialph}{\def\ksDaialph#1{\kian@ksDaialph{#1}}}{}%
+\def\kian@ksDaiAlph#1{\kian@ksDai@{\kian@Alph{#1}}}%
+\@ifundefined{ksDaiAlph}{\def\ksDaiAlph#1{\kian@ksDaiAlph{#1}}}{}%
+\def\kian@ksDairoman#1{\kian@ksDai@{\kian@roman{#1}}}%
+\@ifundefined{ksDairoman}{\def\ksDairoman#1{\kian@ksDairoman{#1}}}{}%
+\def\kian@ksDaiRoman#1{\kian@ksDai@{\kian@Roman{#1}}}%
+\@ifundefined{ksDaiRoman}{\def\ksDaiRoman#1{\kian@ksDaiRoman{#1}}}{}%
+
+% 第*部
+\def\kian@ksDaibu@#1{{{第}\hskip\kanjiskip\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss#1\hss}\hskip\kanjiskip{部}}}%
+\def\kian@ksDaibuArabic#1{\kian@ksDaibu@{\kian@arabic{#1}}}%
+\@ifundefined{ksDaibuArabic}{\def\ksDaibuArabic#1{\kian@ksDaibuArabic{#1}}}{}%
+\def\kian@ksDaibuKansuji#1{\kian@ksDaibu@{\kian@kansuji{#1}}}%
+\@ifundefined{ksDaibuKansuji}{\def\ksDaibuKansuji#1{\kian@ksDaibuKansuji{#1}}}{}%
+\def\kian@ksDaibuKata#1{\kian@ksDaibu@{\kian@kata{#1}}}%
+\@ifundefined{ksDaibuKata}{\def\ksDaibuKata#1{\kian@ksDaibuKata{#1}}}{}%
+\def\kian@ksDaibualph#1{\kian@ksDaibu@{\kian@alph{#1}}}%
+\@ifundefined{ksDaibualph}{\def\ksDaibualph#1{\kian@ksDaibualph{#1}}}{}%
+\def\kian@ksDaibuAlph#1{\kian@ksDaibu@{\kian@Alph{#1}}}%
+\@ifundefined{ksDaibuAlph}{\def\ksDaibuAlph#1{\kian@ksDaibuAlph{#1}}}{}%
+\def\kian@ksDaiburoman#1{\kian@ksDaibu@{\kian@roman{#1}}}%
+\@ifundefined{ksDaiburoman}{\def\ksDaiburoman#1{\kian@ksDaiburoman{#1}}}{}%
+\def\kian@ksDaibuRoman#1{\kian@ksDaibu@{\kian@Roman{#1}}}%
+\@ifundefined{ksDaibuRoman}{\def\ksDaibuRoman#1{\kian@ksDaibuRoman{#1}}}{}%
+
+% 第*章
+\def\kian@ksDaisho@#1{{{第}\hskip\kanjiskip\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss#1\hss}\hskip\kanjiskip{章}}}%
+\def\kian@ksDaishoArabic#1{\kian@ksDaisho@{\kian@arabic{#1}}}%
+\@ifundefined{ksDaishoArabic}{\def\ksDaishoArabic#1{\kian@ksDaishoArabic{#1}}}{}%
+\def\kian@ksDaishoKansuji#1{\kian@ksDaisho@{\kian@kansuji{#1}}}%
+\@ifundefined{ksDaishoKansuji}{\def\ksDaishoKansuji#1{\kian@ksDaishoKansuji{#1}}}{}%
+\def\kian@ksDaishoKata#1{\kian@ksDaisho@{\kian@kata{#1}}}%
+\@ifundefined{ksDaishoKata}{\def\ksDaishoKata#1{\kian@ksDaishoKata{#1}}}{}%
+\def\kian@ksDaishoalph#1{\kian@ksDaisho@{\kian@alph{#1}}}%
+\@ifundefined{ksDaishoalph}{\def\ksDaishoalph#1{\kian@ksDaishoalph{#1}}}{}%
+\def\kian@ksDaishoAlph#1{\kian@ksDaisho@{\kian@Alph{#1}}}%
+\@ifundefined{ksDaishoAlph}{\def\ksDaishoAlph#1{\kian@ksDaishoAlph{#1}}}{}%
+\def\kian@ksDaishoroman#1{\kian@ksDaisho@{\kian@roman{#1}}}%
+\@ifundefined{ksDaishoroman}{\def\ksDaishoroman#1{\kian@ksDaishoroman{#1}}}{}%
+\def\kian@ksDaishoRoman#1{\kian@ksDaisho@{\kian@Roman{#1}}}%
+\@ifundefined{ksDaishoRoman}{\def\ksDaishoRoman#1{\kian@ksDaishoRoman{#1}}}{}%
+
+% 第*節
+\def\kian@ksDaisetsu@#1{{{第}\hskip\kanjiskip\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss#1\hss}\hskip\kanjiskip{節}}}%
+\def\kian@ksDaisetsuArabic#1{\kian@ksDaisetsu@{\kian@arabic{#1}}}%
+\@ifundefined{ksDaisetsuArabic}{\def\ksDaisetsuArabic#1{\kian@ksDaisetsuArabic{#1}}}{}%
+\def\kian@ksDaisetsuKansuji#1{\kian@ksDaisetsu@{\kian@kansuji{#1}}}%
+\@ifundefined{ksDaisetsuKansuji}{\def\ksDaisetsuKansuji#1{\kian@ksDaisetsuKansuji{#1}}}{}%
+\def\kian@ksDaisetsuKata#1{\kian@ksDaisetsu@{\kian@kata{#1}}}%
+\@ifundefined{ksDaisetsuKata}{\def\ksDaisetsuKata#1{\kian@ksDaisetsuKata{#1}}}{}%
+\def\kian@ksDaisetsualph#1{\kian@ksDaisetsu@{\kian@alph{#1}}}%
+\@ifundefined{ksDaisetsualph}{\def\ksDaisetsualph#1{\kian@ksDaisetsualph{#1}}}{}%
+\def\kian@ksDaisetsuAlph#1{\kian@ksDaisetsu@{\kian@Alph{#1}}}%
+\@ifundefined{ksDaisetsuAlph}{\def\ksDaisetsuAlph#1{\kian@ksDaisetsuAlph{#1}}}{}%
+\def\kian@ksDaisetsuroman#1{\kian@ksDaisetsu@{\kian@roman{#1}}}%
+\@ifundefined{ksDaisetsuroman}{\def\ksDaisetsuroman#1{\kian@ksDaisetsuroman{#1}}}{}%
+\def\kian@ksDaisetsuRoman#1{\kian@ksDaisetsu@{\kian@Roman{#1}}}%
+\@ifundefined{ksDaisetsuRoman}{\def\ksDaisetsuRoman#1{\kian@ksDaisetsuRoman{#1}}}{}%
+
+% 第*条
+\def\kian@ksDaijo@#1{{{第}\hskip\kanjiskip\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss#1\hss}\hskip\kanjiskip{条}}}%
+\def\kian@ksDaijoArabic#1{\kian@ksDaijo@{\kian@arabic{#1}}}%
+\@ifundefined{ksDaijoArabic}{\def\ksDaijoArabic#1{\kian@ksDaijoArabic{#1}}}{}%
+\def\kian@ksDaijoKansuji#1{\kian@ksDaijo@{\kian@kansuji{#1}}}%
+\@ifundefined{ksDaijoKansuji}{\def\ksDaijoKansuji#1{\kian@ksDaijoKansuji{#1}}}{}%
+\def\kian@ksDaijoKata#1{\kian@ksDaijo@{\kian@kata{#1}}}%
+\@ifundefined{ksDaijoKata}{\def\ksDaijoKata#1{\kian@ksDaijoKata{#1}}}{}%
+\def\kian@ksDaijoalph#1{\kian@ksDaijo@{\kian@alph{#1}}}%
+\@ifundefined{ksDaijoalph}{\def\ksDaijoalph#1{\kian@ksDaijoalph{#1}}}{}%
+\def\kian@ksDaijoAlph#1{\kian@ksDaijo@{\kian@Alph{#1}}}%
+\@ifundefined{ksDaijoAlph}{\def\ksDaijoAlph#1{\kian@ksDaijoAlph{#1}}}{}%
+\def\kian@ksDaijoroman#1{\kian@ksDaijo@{\kian@roman{#1}}}%
+\@ifundefined{ksDaijoroman}{\def\ksDaijoroman#1{\kian@ksDaijoroman{#1}}}{}%
+\def\kian@ksDaijoRoman#1{\kian@ksDaijo@{\kian@Roman{#1}}}%
+\@ifundefined{ksDaijoRoman}{\def\ksDaijoRoman#1{\kian@ksDaijoRoman{#1}}}{}%
+
+% 第*項
+\def\kian@ksDaiko@#1{{{第}\hskip\kanjiskip\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss#1\hss}\hskip\kanjiskip{項}}}%
+\def\kian@ksDaikoArabic#1{\kian@ksDaiko@{\kian@arabic{#1}}}%
+\@ifundefined{ksDaikoArabic}{\def\ksDaikoArabic#1{\kian@ksDaikoArabic{#1}}}{}%
+\def\kian@ksDaikoKansuji#1{\kian@ksDaiko@{\kian@kansuji{#1}}}%
+\@ifundefined{ksDaikoKansuji}{\def\ksDaikoKansuji#1{\kian@ksDaikoKansuji{#1}}}{}%
+\def\kian@ksDaikoKata#1{\kian@ksDaiko@{\kian@kata{#1}}}%
+\@ifundefined{ksDaikoKata}{\def\ksDaikoKata#1{\kian@ksDaikoKata{#1}}}{}%
+\def\kian@ksDaikoalph#1{\kian@ksDaiko@{\kian@alph{#1}}}%
+\@ifundefined{ksDaikoalph}{\def\ksDaikoalph#1{\kian@ksDaikoalph{#1}}}{}%
+\def\kian@ksDaikoAlph#1{\kian@ksDaiko@{\kian@Alph{#1}}}%
+\@ifundefined{ksDaikoAlph}{\def\ksDaikoAlph#1{\kian@ksDaikoAlph{#1}}}{}%
+\def\kian@ksDaikoroman#1{\kian@ksDaiko@{\kian@roman{#1}}}%
+\@ifundefined{ksDaikoroman}{\def\ksDaikoroman#1{\kian@ksDaikoroman{#1}}}{}%
+\def\kian@ksDaikoRoman#1{\kian@ksDaiko@{\kian@Roman{#1}}}%
+\@ifundefined{ksDaikoRoman}{\def\ksDaikoRoman#1{\kian@ksDaikoRoman{#1}}}{}%
+
+% 第*号
+\def\kian@ksDaigo@#1{{{第}\hskip\kanjiskip\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss#1\hss}\hskip\kanjiskip{号}}}%
+\def\kian@ksDaigoArabic#1{\kian@ksDaigo@{\kian@arabic{#1}}}%
+\@ifundefined{ksDaigoArabic}{\def\ksDaigoArabic#1{\kian@ksDaigoArabic{#1}}}{}%
+\def\kian@ksDaigoKansuji#1{\kian@ksDaigo@{\kian@kansuji{#1}}}%
+\@ifundefined{ksDaigoKansuji}{\def\ksDaigoKansuji#1{\kian@ksDaigoKansuji{#1}}}{}%
+\def\kian@ksDaigoKata#1{\kian@ksDaigo@{\kian@kata{#1}}}%
+\@ifundefined{ksDaigoKata}{\def\ksDaigoKata#1{\kian@ksDaigoKata{#1}}}{}%
+\def\kian@ksDaigoalph#1{\kian@ksDaigo@{\kian@alph{#1}}}%
+\@ifundefined{ksDaigoalph}{\def\ksDaigoalph#1{\kian@ksDaigoalph{#1}}}{}%
+\def\kian@ksDaigoAlph#1{\kian@ksDaigo@{\kian@Alph{#1}}}%
+\@ifundefined{ksDaigoAlph}{\def\ksDaigoAlph#1{\kian@ksDaigoAlph{#1}}}{}%
+\def\kian@ksDaigoroman#1{\kian@ksDaigo@{\kian@roman{#1}}}%
+\@ifundefined{ksDaigoroman}{\def\ksDaigoroman#1{\kian@ksDaigoroman{#1}}}{}%
+\def\kian@ksDaigoRoman#1{\kian@ksDaigo@{\kian@Roman{#1}}}%
+\@ifundefined{ksDaigoRoman}{\def\ksDaigoRoman#1{\kian@ksDaigoRoman{#1}}}{}%
+
+% LaTeXの基本を援用
+\def\kian@kslabelitemi#1{\leavevmode\hbox to1\zw{\labelitemi}}%
+\@ifundefined{kslabelitemi}{\let\kslabelitemi\kian@kslabelitemi}{}%
+\def\kian@kslabelitemii#1{\leavevmode\hbox to1\zw{\labelitemii}}%
+\@ifundefined{kslabelitemii}{\let\kslabelitemii\kian@kslabelitemii}{}%
+\def\kian@kslabelitemiii#1{\leavevmode\hbox to1\zw{\labelitemiii}}%
+\@ifundefined{kslabelitemiii}{\let\kslabelitemiii\kian@kslabelitemiii}{}%
+\def\kian@kslabelitemiv#1{\leavevmode\hbox to1\zw{\labelitemiv}}%
+\@ifundefined{kslabelitemiv}{\let\kslabelitemiv\kian@kslabelitemiv}{}%
+\def\kian@kslabelenumi#1{{\leavevmode\c@enumi=#1\hbox to1\zw{\labelenumi}}}%
+\@ifundefined{kslabelenumi}{\let\kslabelenumi\kian@kslabelenumi}{}%
+\def\kian@kslabelenumii#1{{\leavevmode\c@enumii=#1\hbox to1\zw{\labelenumii}}}%
+\@ifundefined{kslabelenumii}{\let\kslabelenumii\kian@kslabelenumii}{}%
+\def\kian@kslabelenumiii#1{{\leavevmode\c@enumiii=#1\hbox to1\zw{\labelenumiii}}}%
+\@ifundefined{kslabelenumiii}{\let\kslabelenumiii\kian@kslabelenumiii}{}%
+\def\kian@kslabelenumiv#1{{\leavevmode\c@enumiv=#1\hbox to1\zw{\labelenumiv}}}%
+\@ifundefined{kslabelenumiv}{\let\kslabelenumiv\kian@kslabelenumiv}{}%
+
+% 算用数字の原則
+\let\kian@ks\kian@ksArabic%
+\@ifundefined{ks}{\def\ks#1{\kian@ks{#1}}}{}%
+\let\kian@ksMaru\kian@ksMaruArabic%
+\@ifundefined{ksMaru}{\def\ksMaru#1{\kian@ksMaru{#1}}}{}%
+\let\kian@ksKakko\kian@ksKakkoArabic%
+\@ifundefined{ksKakko}{\def\ksKakko#1{\kian@ksKakko{#1}}}{}%
+\let\kian@kskakko\kian@kskakkoArabic%
+\@ifundefined{kskakko}{\def\kskakko#1{\kian@kskakko{#1}}}{}%
+\let\kian@ksDot\kian@ksDotArabic%
+\@ifundefined{ksDot}{\def\ksDot#1{\kian@ksDot{#1}}}{}%
+\let\kian@ksColon\kian@ksColonArabic%
+\@ifundefined{ksColon}{\def\ksColon#1{\kian@ksColon{#1}}}{}%
+\let\kian@ksDai\kian@ksDaiArabic%
+\@ifundefined{ksDai}{\def\ksDai#1{\kian@ksDai{#1}}}{}%
+\let\kian@ksDaibu\kian@ksDaibuArabic%
+\@ifundefined{ksDaibu}{\def\ksDaibu#1{\kian@ksDaibu{#1}}}{}%
+\let\kian@ksDaisho\kian@ksDaishoArabic%
+\@ifundefined{ksDaisho}{\def\ksDaisho#1{\kian@ksDaisho{#1}}}{}%
+\let\kian@ksDaisetsu\kian@ksDaisetsuArabic%
+\@ifundefined{ksDaisetsu}{\def\ksDaisetsu#1{\kian@ksDaisetsu{#1}}}{}%
+\let\kian@ksDaijo\kian@ksDaijoArabic%
+\@ifundefined{ksDaijo}{\def\ksDaijo#1{\kian@ksDaijo{#1}}}{}%
+\let\kian@ksDaiko\kian@ksDaikoArabic%
+\@ifundefined{ksDaiko}{\def\ksDaiko#1{\kian@ksDaiko{#1}}}{}%
+\let\kian@ksDaigo\kian@ksDaigoArabic%
+\@ifundefined{ksDaigo}{\def\ksDaigo#1{\kian@ksDaigo{#1}}}{}%
+
+% 記号
+\def\kian@ballotbox{□}%"□
+\@ifundefined{ballotbox}{\def\ballotbox{\kian@ballotbox}}{}%
+\def\kian@ballotboxwithcheck{■}%"■
+\@ifundefined{ballotboxwithcheck}{\def\ballotboxwithcheck{\kian@ballotboxwithcheck}}{}%
+
+% セクション記番号の核心の定義
+\def\kian@sect@printsectionZcore#1{}%
+\def\kian@sect@printsectionAcore#1{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss#1\hss}}%
+\def\kian@sect@printsectionBcore#1{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss#1\hss}}%
+\def\kian@sect@printsectionCcore#1{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss(#1)\hss}}%
+\def\kian@sect@printsectionDcore#1{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss\kian@kata{#1}\hss}}%
+\def\kian@sect@printsectionEcore#1{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss(\kian@kata{#1})\hss}}%
+\def\kian@sect@printsectionFcore#1{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss\kian@alph{#1}\hss}}%
+\def\kian@sect@printsectionGcore#1{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss(\kian@alph{#1})\hss}}%
+
+%======================================%
+% セクション記番号の後修飾の定義
+
+\def\postsectionZname{}%
+\def\postsectionAname{}%
+\def\postsectionBname{}%
+\def\postsectionCname{}%
+\def\postsectionDname{}%
+\def\postsectionEname{}%
+\def\postsectionFname{}%
+\def\postsectionGname{}%
+
+%======================================%
+% セクション記番号の繋ぎの定義
+
+\def\gluesectionZname{}%
+\def\gluesectionAname{{の}}%"の
+\def\gluesectionBname{}%
+\def\gluesectionCname{}%
+\def\gluesectionDname{}%
+\def\gluesectionEname{}%
+\def\gluesectionFname{}%
+\def\gluesectionGname{}%
+
+%======================================%
+% セクション記番号の出力
+
+\def\kian@normalprintsectionZ#1{%
+  \expandafter\ifx\expandafter\relax\presectionZname\relax\else\presectionZname\hskip\kanjiskip\fi%
+  \kian@sect@printsectionZcore{#1}%
+  \expandafter\ifx\expandafter\relax\postsectionZname\relax\else\hskip\kanjiskip\postsectionZname\fi%
+}%
+\def\kian@normalprintsectionA#1{%
+  \expandafter\ifx\expandafter\relax\presectionAname\relax\else\presectionAname\hskip\kanjiskip\fi%
+  \kian@sect@printsectionAcore{#1}%
+  \expandafter\ifx\expandafter\relax\postsectionAname\relax\else\hskip\kanjiskip\postsectionAname\fi%
+}%
+\def\kian@normalprintsectionB#1{%
+  \expandafter\ifx\expandafter\relax\presectionBname\relax\else\presectionBname\hskip\kanjiskip\fi%
+  \kian@sect@printsectionBcore{#1}%
+  \expandafter\ifx\expandafter\relax\postsectionBname\relax\else\hskip\kanjiskip\postsectionBname\fi%
+}%
+\def\kian@normalprintsectionC#1{%
+  \expandafter\ifx\expandafter\relax\presectionCname\relax\else\presectionCname\hskip\kanjiskip\fi%
+  \kian@sect@printsectionCcore{#1}%
+  \expandafter\ifx\expandafter\relax\postsectionCname\relax\else\hskip\kanjiskip\postsectionCname\fi%
+}%
+\def\kian@normalprintsectionD#1{%
+  \expandafter\ifx\expandafter\relax\presectionDname\relax\else\presectionDname\hskip\kanjiskip\fi%
+  \kian@sect@printsectionDcore{#1}%
+  \expandafter\ifx\expandafter\relax\postsectionDname\relax\else\hskip\kanjiskip\postsectionDname\fi%
+}%
+\def\kian@normalprintsectionE#1{%
+  \expandafter\ifx\expandafter\relax\presectionEname\relax\else\presectionEname\hskip\kanjiskip\fi%
+  \kian@sect@printsectionEcore{#1}%
+  \expandafter\ifx\expandafter\relax\postsectionEname\relax\else\hskip\kanjiskip\postsectionEname\fi%
+}%
+\def\kian@normalprintsectionF#1{%
+  \expandafter\ifx\expandafter\relax\presectionFname\relax\else\presectionFname\hskip\kanjiskip\fi%
+  \kian@sect@printsectionFcore{#1}%
+  \expandafter\ifx\expandafter\relax\postsectionFname\relax\else\hskip\kanjiskip\postsectionFname\fi%
+}%
+\def\kian@normalprintsectionG#1{%
+  \expandafter\ifx\expandafter\relax\presectionGname\relax\else\presectionGname\hskip\kanjiskip\fi%
+  \kian@sect@printsectionGcore{#1}%
+  \expandafter\ifx\expandafter\relax\postsectionGname\relax\else\hskip\kanjiskip\postsectionGname\fi%
+}%
+\@ifundefined{normalprintsectionZ}{\def\normalprintsectionZ#1{\kian@normalprintsectionZ{#1}}}{}%
+\@ifundefined{normalprintsectionA}{\def\normalprintsectionA#1{\kian@normalprintsectionA{#1}}}{}%
+\@ifundefined{normalprintsectionB}{\def\normalprintsectionB#1{\kian@normalprintsectionB{#1}}}{}%
+\@ifundefined{normalprintsectionC}{\def\normalprintsectionC#1{\kian@normalprintsectionC{#1}}}{}%
+\@ifundefined{normalprintsectionD}{\def\normalprintsectionD#1{\kian@normalprintsectionD{#1}}}{}%
+\@ifundefined{normalprintsectionE}{\def\normalprintsectionE#1{\kian@normalprintsectionE{#1}}}{}%
+\@ifundefined{normalprintsectionF}{\def\normalprintsectionF#1{\kian@normalprintsectionF{#1}}}{}%
+\@ifundefined{normalprintsectionG}{\def\normalprintsectionG#1{\kian@normalprintsectionG{#1}}}{}%
+\def\printsectionZ#1{\kian@normalprintsectionZ{#1}}%
+\def\printsectionA#1{\kian@normalprintsectionA{#1}}%
+\def\printsectionB#1{\kian@normalprintsectionB{#1}}%
+\def\printsectionC#1{\kian@normalprintsectionC{#1}}%
+\def\printsectionD#1{\kian@normalprintsectionD{#1}}%
+\def\printsectionE#1{\kian@normalprintsectionE{#1}}%
+\def\printsectionF#1{\kian@normalprintsectionF{#1}}%
+\def\printsectionG#1{\kian@normalprintsectionG{#1}}%
+\@ifundefined{PriZ}{\def\PriZ#1{\printsectionZ{#1}}}{}%
+\@ifundefined{PriA}{\def\PriA#1{\printsectionA{#1}}}{}%
+\@ifundefined{PriB}{\def\PriB#1{\printsectionB{#1}}}{}%
+\@ifundefined{PriC}{\def\PriC#1{\printsectionC{#1}}}{}%
+\@ifundefined{PriD}{\def\PriD#1{\printsectionD{#1}}}{}%
+\@ifundefined{PriE}{\def\PriE#1{\printsectionE{#1}}}{}%
+\@ifundefined{PriF}{\def\PriF#1{\printsectionF{#1}}}{}%
+\@ifundefined{PriG}{\def\PriG#1{\printsectionG{#1}}}{}%
+
+%======================================%
+% セクション記番号標題の出力
+
+\def\kian@normalPrintsectionZ#1#2{{\inhibitglue#2}}%
+\def\kian@normalPrintsectionA#1#2{{\printsectionA{#1}\kern1\zw\kern2\kanjiskip\inhibitglue#2}}%
+\def\kian@normalPrintsectionB#1#2{{\printsectionB{#1}\kern1\zw\kern2\kanjiskip\inhibitglue#2}}%
+\def\kian@normalPrintsectionC#1#2{{\printsectionC{#1}\kern1\zw\kern2\kanjiskip\inhibitglue#2}}%
+\def\kian@normalPrintsectionD#1#2{{\printsectionD{#1}\kern1\zw\kern2\kanjiskip\inhibitglue#2}}%
+\def\kian@normalPrintsectionE#1#2{{\printsectionE{#1}\kern1\zw\kern2\kanjiskip\inhibitglue#2}}%
+\def\kian@normalPrintsectionF#1#2{{\printsectionF{#1}\kern1\zw\kern2\kanjiskip\inhibitglue#2}}%
+\def\kian@normalPrintsectionG#1#2{{\printsectionG{#1}\kern1\zw\kern2\kanjiskip\inhibitglue#2}}%
+%\def\kian@normalPrintsectionZ#1#2{{\inhibitglue\globaldefs=1\relax#2}}%
+%\def\kian@normalPrintsectionA#1#2{{\printsectionA{#1}\kern1\zw\kern2\kanjiskip\inhibitglue\globaldefs=1\relax#2}}%
+%\def\kian@normalPrintsectionB#1#2{{\printsectionB{#1}\kern1\zw\kern2\kanjiskip\inhibitglue\globaldefs=1\relax#2}}%
+%\def\kian@normalPrintsectionC#1#2{{\printsectionC{#1}\kern1\zw\kern2\kanjiskip\inhibitglue\globaldefs=1\relax#2}}%
+%\def\kian@normalPrintsectionD#1#2{{\printsectionD{#1}\kern1\zw\kern2\kanjiskip\inhibitglue\globaldefs=1\relax#2}}%
+%\def\kian@normalPrintsectionE#1#2{{\printsectionE{#1}\kern1\zw\kern2\kanjiskip\inhibitglue\globaldefs=1\relax#2}}%
+%\def\kian@normalPrintsectionF#1#2{{\printsectionF{#1}\kern1\zw\kern2\kanjiskip\inhibitglue\globaldefs=1\relax#2}}%
+%\def\kian@normalPrintsectionG#1#2{{\printsectionG{#1}\kern1\zw\kern2\kanjiskip\inhibitglue\globaldefs=1\relax#2}}%
+\@ifundefined{normalPrintsectionZ}{\def\normalPrintsectionZ#1#2{\kian@normalPrintsectionZ{#1}{#2}}}{}%
+\@ifundefined{normalPrintsectionA}{\def\normalPrintsectionA#1#2{\kian@normalPrintsectionA{#1}{#2}}}{}%
+\@ifundefined{normalPrintsectionB}{\def\normalPrintsectionB#1#2{\kian@normalPrintsectionB{#1}{#2}}}{}%
+\@ifundefined{normalPrintsectionC}{\def\normalPrintsectionC#1#2{\kian@normalPrintsectionC{#1}{#2}}}{}%
+\@ifundefined{normalPrintsectionD}{\def\normalPrintsectionD#1#2{\kian@normalPrintsectionD{#1}{#2}}}{}%
+\@ifundefined{normalPrintsectionE}{\def\normalPrintsectionE#1#2{\kian@normalPrintsectionE{#1}{#2}}}{}%
+\@ifundefined{normalPrintsectionF}{\def\normalPrintsectionF#1#2{\kian@normalPrintsectionF{#1}{#2}}}{}%
+\@ifundefined{normalPrintsectionG}{\def\normalPrintsectionG#1#2{\kian@normalPrintsectionG{#1}{#2}}}{}%
+\def\PrintsectionZ#1#2{\kian@normalPrintsectionZ{#1}{#2}}%
+\def\PrintsectionA#1#2{\kian@normalPrintsectionA{#1}{#2}}%
+\def\PrintsectionB#1#2{\kian@normalPrintsectionB{#1}{#2}}%
+\def\PrintsectionC#1#2{\kian@normalPrintsectionC{#1}{#2}}%
+\def\PrintsectionD#1#2{\kian@normalPrintsectionD{#1}{#2}}%
+\def\PrintsectionE#1#2{\kian@normalPrintsectionE{#1}{#2}}%
+\def\PrintsectionF#1#2{\kian@normalPrintsectionF{#1}{#2}}%
+\def\PrintsectionG#1#2{\kian@normalPrintsectionG{#1}{#2}}%
+\@ifundefined{PRIZ}{\def\PRIZ#1#2{\PrintsectionZ{#1}{#2}}}{}%
+\@ifundefined{PRIA}{\def\PRIA#1#2{\PrintsectionA{#1}{#2}}}{}%
+\@ifundefined{PRIB}{\def\PRIB#1#2{\PrintsectionB{#1}{#2}}}{}%
+\@ifundefined{PRIC}{\def\PRIC#1#2{\PrintsectionC{#1}{#2}}}{}%
+\@ifundefined{PRID}{\def\PRID#1#2{\PrintsectionD{#1}{#2}}}{}%
+\@ifundefined{PRIE}{\def\PRIE#1#2{\PrintsectionE{#1}{#2}}}{}%
+\@ifundefined{PRIF}{\def\PRIF#1#2{\PrintsectionF{#1}{#2}}}{}%
+\@ifundefined{PRIG}{\def\PRIG#1#2{\PrintsectionG{#1}{#2}}}{}%
+
+%======================================%
+% セクション記番号（複数）の出力
+
+\def\kian@sect@printsections{%
+  \@ifnextchar[{\kian@sect@printsections@A}{\kian@sect@printsections@A[-1]}%]
+}%
+\def\kian@sect@printsections@A[#1]#2#3#4{{% #1:幅 #2:開始レベル,終了レベル #3:カウンター値（複数） #4:標題
+  % 開始レベルと終了レベルを確認
+  \@tempcnta=-1\relax% 開始レベル
+  \@tempcntb=-1\relax% 終了レベル
+  \@tempcntc=1\relax%
+  \@for\@tempfuna:=#2\do{%
+    \ifnum\@tempcntc=1%
+      \if\relax\@tempfuna\relax\else\@tempcnta=\@tempfuna\relax\fi\else%
+      \if\relax\@tempfuna\relax\else\@tempcntb=\@tempfuna\relax\fi\fi%
+    \advance\@tempcntc by1\relax%
+  }%
+  % 開始レベルが空白の場合の修正（\refdepthで逆算する）
+  \ifnum\@tempcnta=-1\@tempcnta=\@tempcntb\advance\@tempcnta by1\advance\@tempcnta by-\@kian@sect@refdepth\fi%
+  % 表示
+  \@tempcntc=0\relax\@for\@tempfuna:=#3\do{%
+    \ifnum\@tempcntc<\@tempcnta\else%
+      % 準備
+      \ifcase\@tempcntc%
+        \def\@tempfunb{Z}\or\def\@tempfunb{A}\or\def\@tempfunb{B}\or\def\@tempfunb{C}\or%
+        \def\@tempfunb{D}\or\def\@tempfunb{E}\or\def\@tempfunb{F}\or\def\@tempfunb{G}\fi%
+      \def\@tempfunc{\csname printsection\@tempfunb\endcsname{\@tempfuna}}%
+      \edef\@tempfund{\csname gluesection\@tempfunb name\endcsname}%
+      \def\@tempfune{\csname Printsection\@tempfunb\endcsname{\@tempfuna}{#4}}%
+      % オプションによる修正
+      \kian@sect@applysectionoption{%
+        \@kian@sect@sectionZoption:\@kian@sect@sectionAoption:\@kian@sect@sectionBoption:\@kian@sect@sectionCoption:%
+        \@kian@sect@sectionDoption:\@kian@sect@sectionEoption:\@kian@sect@sectionFoption:\@kian@sect@sectionGoption}%
+      % 表示
+      \ifnum\@tempfuna>0%
+        \ifnum\@tempcntc<\@tempcntb%
+          % 途中
+          \setbox0=\hbox{\@tempfunc}%
+          \ifdim\wd0>\z@%
+            \begingroup%
+              \dimen0=1\zw\relax\advance\dimen0\kanjiskip\relax%
+              \dimen0=#1\dimen0\relax\advance\dimen0 by-\kanjiskip\relax%
+              % セクション記番号
+              \advance\dimen0 by-\wd0\relax\leavevmode\@tempfunc\hskip\kanjiskip\relax%
+              % 空白
+              \setbox1=\hbox{\@tempfund}%
+              \ifdim\wd1>\z@%
+                % セクション記番号の繋ぎ
+                \advance\dimen0 by-\wd1\relax\leavevmode\@tempfund\hskip\kanjiskip\relax%
+              \fi%
+              \ifnum#1<0\else\hskip\dimen0\fi% 幅指定ありの場合
+            \endgroup%
+          \fi%
+        \else\ifnum\@tempcntc=\@tempcntb%
+          % 最後
+          \ifx\relax#4\relax%
+            % 標題なし
+            \setbox0=\hbox{\@tempfunc}%
+            \ifdim\wd0>\z@%
+              \begingroup%
+                \dimen0=1\zw\relax\advance\dimen0\kanjiskip\relax%
+                \dimen0=#1\dimen0\relax\advance\dimen0 by-\kanjiskip\relax%
+                % セクション記番号
+                \advance\dimen0 by-\wd0\relax\leavevmode\@tempfunc\relax%
+                %\advance\dimen0 by-\wd0\relax\leavevmode\@tempfunc\hskip\kanjiskip\relax%
+                \ifnum#1<0\else\hskip\dimen0\fi% 幅指定ありの場合
+              \endgroup%
+            \fi%
+          \else%
+            % 標題あり
+            \@tempfune%
+          \fi%
+        \fi\fi%
+      \fi%
+    \fi%
+    \advance\@tempcntc by1\relax%
+  }%
+}}%
+
+%======================================%
+% セクション記番号（複数）標題の出力
+
+\def\kian@sect@Printsections#1{% #1:セクション標題
+  % 改段落
+  \endgraf%
+  % 字下げを適用
+  \kian@sect@applysectionhlength%
+  \hskip-\parindent\relax\hskip-\leftskip\relax% 行頭に移動
+  \hskip\dimen1\relax% 全体の字下げ
+  \hskip\dimen2\relax% セクションの字下げ
+  % セクション記番号（複数）を出力
+  \kian@sect@printsections[\@kian@sect@sectionhlengthB]%
+    {\@kian@sect@startstate,\@kian@sect@currentstate}%
+    {\the\c@kian@sectionZ,\the\c@kian@sectionA,\the\c@kian@sectionB,\the\c@kian@sectionC,%
+     \the\c@kian@sectionD,\the\c@kian@sectionE,\the\c@kian@sectionF,\the\c@kian@sectionG}%
+    {#1}%
+  % 開始セクションレベルを初期化
+  \begingroup%
+    \@tempcnta=-100\relax\advance\@tempcnta by\@kian@sect@startstate%
+    \xdef\@kian@sect@startstate{\the\@tempcnta}%
+    %\gdef\@kian@sect@startstate{-100}%
+  \endgroup%
+  % 改段落を通常改段落に回復
+  \let\par\kian@sect@normalpar%
+}%
+
+%==========================================================%
+% セクション（本体）
+
+%======================================%
+% セクションレベルのみを変更
+
+\def\kian@state#1{% #1:セクションレベル
+  \endgraf%
+  % 現在セクションレベルを記録
+  \def\@kian@sect@currentstate{#1}%
+  % 箇条書きをクリア
+  \xdef\@kian@sect@itemize{N}%
+  % 字下げを適用
+  \kian@sect@applysectionhlength%
+}%
+\def\kian@stateZ{\kian@state{0}}%
+\def\kian@stateA{\kian@state{1}}%
+\def\kian@stateB{\kian@state{2}}%
+\def\kian@stateC{\kian@state{3}}%
+\def\kian@stateD{\kian@state{4}}%
+\def\kian@stateE{\kian@state{5}}%
+\def\kian@stateF{\kian@state{6}}%
+\def\kian@stateG{\kian@state{7}}%
+\@ifundefined{stateZ}{\let\stateZ\kian@stateZ}{}%
+\@ifundefined{stateA}{\let\stateA\kian@stateA}{}%
+\@ifundefined{stateB}{\let\stateB\kian@stateB}{}%
+\@ifundefined{stateC}{\let\stateC\kian@stateC}{}%
+\@ifundefined{stateD}{\let\stateD\kian@stateD}{}%
+\@ifundefined{stateE}{\let\stateE\kian@stateE}{}%
+\@ifundefined{stateF}{\let\stateF\kian@stateF}{}%
+\@ifundefined{stateG}{\let\stateG\kian@stateG}{}%
+\@ifundefined{StaZ}{\let\StaZ\kian@stateZ}{}%
+\@ifundefined{StaA}{\let\StaA\kian@stateA}{}%
+\@ifundefined{StaB}{\let\StaB\kian@stateB}{}%
+\@ifundefined{StaC}{\let\StaC\kian@stateC}{}%
+\@ifundefined{StaD}{\let\StaD\kian@stateD}{}%
+\@ifundefined{StaE}{\let\StaE\kian@stateE}{}%
+\@ifundefined{StaF}{\let\StaF\kian@stateF}{}%
+\@ifundefined{StaG}{\let\StaG\kian@stateG}{}%
+
+%======================================%
+% オプション
+
+\def\@kian@sect@sectionZoption{=}%
+\def\@kian@sect@sectionAoption{=}%
+\def\@kian@sect@sectionBoption{=}%
+\def\@kian@sect@sectionCoption{=}%
+\def\@kian@sect@sectionDoption{=}%
+\def\@kian@sect@sectionEoption{=}%
+\def\@kian@sect@sectionFoption{=}%
+\def\@kian@sect@sectionGoption{=}%
+
+% 斜体の定義
+\let\kian@textslbox\textsl%
+
+% オプションを適用
+\def\kian@sect@applysectionoption#1{%
+  \@ifundefined{kian@sect@sectionoptionalreadyapplyed}{%
+    % 未適用の場合
+    %\@tfor\@tempfuna:=ZABCDEFG\do{%
+    %}%
+    % 適用
+    \kian@sect@applysectionoption@A#1\@nil%
+    % 適用済みを設定
+    \def\kian@sect@sectionoptionalreadyapplyed{YES}%
+  }{}%
+}%
+\def\kian@sect@applysectionoption@A#1:#2:#3:#4:#5:#6:#7:#8\@nil{%
+  \expandafter\ifx\expandafter=#1\relax\else\kian@sect@applysectionoption@B{Z}{#1}\fi%
+  \expandafter\ifx\expandafter=#2\relax\else\kian@sect@applysectionoption@B{A}{#2}\fi%
+  \expandafter\ifx\expandafter=#3\relax\else\kian@sect@applysectionoption@B{B}{#3}\fi%
+  \expandafter\ifx\expandafter=#4\relax\else\kian@sect@applysectionoption@B{C}{#4}\fi%
+  \expandafter\ifx\expandafter=#5\relax\else\kian@sect@applysectionoption@B{D}{#5}\fi%
+  \expandafter\ifx\expandafter=#6\relax\else\kian@sect@applysectionoption@B{E}{#6}\fi%
+  \expandafter\ifx\expandafter=#7\relax\else\kian@sect@applysectionoption@B{F}{#7}\fi%
+  \expandafter\ifx\expandafter=#8\relax\else\kian@sect@applysectionoption@B{G}{#8}\fi%
+}%
+\def\kian@sect@applysectionoption@B#1#2{%
+  % オプションを解析
+  \@for\@tempfunf:=#2\do{%
+    % 文字サイズ
+    \def\@tempfung{tiny}\ifx\@tempfunf\@tempfung%
+      \expandafter\def\csname @kian@sect@section#1optionsize\endcsname{\tiny}\else%
+    \def\@tempfung{scriptsize}\ifx\@tempfunf\@tempfung%
+      \expandafter\def\csname @kian@sect@section#1optionsize\endcsname{\scriptsize}\else%
+    \def\@tempfung{footnotesize}\ifx\@tempfunf\@tempfung%
+      \expandafter\def\csname @kian@sect@section#1optionsize\endcsname{\footnotesize}\else%
+    \def\@tempfung{small}\ifx\@tempfunf\@tempfung%
+      \expandafter\def\csname @kian@sect@section#1optionsize\endcsname{\small}\else%
+    \def\@tempfung{normalsize}\ifx\@tempfunf\@tempfung%
+      \expandafter\def\csname @kian@sect@section#1optionsize\endcsname{\normalsize}\else%
+    \def\@tempfung{large}\ifx\@tempfunf\@tempfung%
+      \expandafter\def\csname @kian@sect@section#1optionsize\endcsname{\large}\else%
+    \def\@tempfung{Large}\ifx\@tempfunf\@tempfung%
+      \expandafter\def\csname @kian@sect@section#1optionsize\endcsname{\Large}\else%
+    \def\@tempfung{LARGE}\ifx\@tempfunf\@tempfung%
+      \expandafter\def\csname @kian@sect@section#1optionsize\endcsname{\LARGE}\else%
+    \def\@tempfung{huge}\ifx\@tempfunf\@tempfung%
+      \expandafter\def\csname @kian@sect@section#1optionsize\endcsname{\huge}\else%
+    \def\@tempfung{Huge}\ifx\@tempfunf\@tempfung%
+      \expandafter\def\csname @kian@sect@section#1optionsize\endcsname{\Huge}\else%
+    % 文字形状
+    \def\@tempfung{textbf}\ifx\@tempfunf\@tempfung%
+      \expandafter\def\csname @kian@sect@section#1optiontextbf\endcsname{\textbf}\else%
+    \def\@tempfung{textsl}\ifx\@tempfunf\@tempfung%
+      \expandafter\def\csname @kian@sect@section#1optiontextsl\endcsname{\kian@textslbox}\else%
+    % 下線
+    \def\@tempfung{underline}\ifx\@tempfunf\@tempfung%
+      \@ifundefined{@kian@sect@section#1optionunderline}%
+        {\expandafter\def\csname @kian@sect@section#1optionunderline\endcsname{\underline}}%
+        {\expandafter\def\csname @kian@sect@section#1optionUnderline\endcsname{\underline}}\else%
+    \def\@tempfung{Underline}\ifx\@tempfunf\@tempfung%
+      \expandafter\def\csname @kian@sect@section#1optionunderline\endcsname{\underline}%
+      \expandafter\def\csname @kian@sect@section#1optionUnderline\endcsname{\underline}\else%
+    % 記番号
+    \def\@tempfung{blank}\ifx\@tempfunf\@tempfung%
+      \expandafter\expandafter\expandafter\def\expandafter\expandafter\csname printsection#1\endcsname##1%
+      {\hbox to1\zw{}}\else%
+    \@ifundefined{kian@ks\@tempfunf}{%
+    \@ifundefined{\@tempfunf}{%
+      % 3:エラー
+      \errmessage{Package kian-sect Error: Bad option "\@tempfunf"}}{%
+      % 2:基本
+      \expandafter\expandafter\expandafter\kian@sect@applysectionoption@C\@tempfunf{}{}{}{}{}{}{}{}{}\@nil%
+      \expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\let%
+        \expandafter\expandafter\csname printsection#1temp\endcsname\csname\@tempfunf\endcsname%
+      \ifcase\@kian@result%
+        % 2-0:数式モードの記号
+        \expandafter\expandafter\expandafter\def\expandafter\expandafter\csname printsection#1\endcsname##1%
+          {\leavevmode\hbox to1\zw{\hss$\csname printsection#1temp\endcsname$\hss}}\or%
+        % 2-1:\text*
+        \expandafter\expandafter\expandafter\def\expandafter\expandafter\csname printsection#1\endcsname##1%
+          {\leavevmode\hbox to1\zw{\hss\csname printsection#1temp\endcsname\hss}}\or%
+        % 2-2:\labelitem*
+        \expandafter\expandafter\expandafter\def\expandafter\expandafter\csname printsection#1\endcsname##1%
+          {\leavevmode\hbox to1\zw{\csname printsection#1temp\endcsname}}\or%
+        % 2-3:\labelenum*
+        \expandafter\expandafter\expandafter\def\expandafter\expandafter\csname printsection#1\endcsname##1%
+          {\leavevmode\hbox to1\zw{\c@enumi=##1\relax\c@enumii=##1\relax\c@enumiii=##1\relax\c@enumiv=##1\relax%
+            \csname printsection#1temp\endcsname}}\or%
+        % 2-4:\aj*
+        \expandafter\expandafter\expandafter\def\expandafter\expandafter\csname printsection#1\endcsname##1%
+          {\leavevmode\hbox to1\zw{\csname printsection#1temp\endcsname{##1}}}\or%
+        % 2-5:\ks*
+        \expandafter\expandafter\expandafter\def\expandafter\expandafter\csname printsection#1\endcsname##1%
+          {\leavevmode\hbox to1\zw{\csname printsection#1temp\endcsname{##1}}}\or%
+      \fi}}{%
+      % 1:\kian@ks*
+      \expandafter\expandafter\expandafter\let\expandafter\expandafter\csname printsection#1\endcsname%
+        \csname kian@ks\@tempfunf\endcsname}%
+      \fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi%
+  }%
+  % オプションを反映
+  \expandafter\expandafter\expandafter\let\expandafter\expandafter\csname Printsection#1@temp\endcsname%
+    \csname Printsection#1\endcsname%
+  \expandafter\def\csname Printsection#1\endcsname##1##2{%
+    \csname @kian@sect@section#1optionsize\endcsname%
+    \csname @kian@sect@section#1optionunderline\endcsname{%
+    \csname @kian@sect@section#1optionUnderline\endcsname{%
+    \csname @kian@sect@section#1optiontextsl\endcsname{%
+    \csname @kian@sect@section#1optiontextbf\endcsname{%
+    \csname Printsection#1@temp\endcsname{##1}{##2}}}}}}%
+}%
+\def\kian@sect@applysectionoption@C#1#2#3#4#5#6#7#8#9\@nil{{%
+  \xdef\@kian@result{0}%
+  % \text*
+  \ifx#1t\relax\ifx#2e\relax\ifx#3x\relax\ifx#4t\relax%
+    \xdef\@kian@result{1}\fi\fi\fi\fi%
+  % \labelitem*
+  \ifx#1l\relax\ifx#2a\relax\ifx#3b\relax\ifx#4e\relax\ifx#5l\relax\ifx#6i\relax\ifx#7t\relax\ifx#8e\relax%
+    \xdef\@kian@result{2}\fi\fi\fi\fi\fi\fi\fi\fi%
+  % \labelenum*
+  \ifx#1l\relax\ifx#2a\relax\ifx#3b\relax\ifx#4e\relax\ifx#5l\relax\ifx#6e\relax\ifx#7n\relax\ifx#8u\relax%
+    \xdef\@kian@result{3}\fi\fi\fi\fi\fi\fi\fi\fi%
+  % \aj*
+  \ifx#1a\relax\ifx#2j\relax%
+    \xdef\@kian@result{4}\fi\fi%
+  % \ks*
+  \ifx#1k\relax\ifx#2s\relax%
+    \xdef\@kian@result{5}\fi\fi%
+}}%
+
+%======================================%
+% セクションレベルを変更
+
+\def\kian@sect@section#1{% #1:セクションレベル
+  \@ifstar{\kian@sect@section@A{#1}[*]}{\kian@sect@section@A{#1}[=]}%
+}%
+\def\kian@sect@section@A#1[#2]{% #1:セクションレベル #2:[*=]
+  \@ifnextchar[{\kian@sect@section@B{#1}[#2]}{\kian@sect@section@B{#1}[#2][=]}%]
+}%
+\def\kian@sect@section@B#1[#2][#3]#4{% #1:セクションレベル #2:[*=] #3:オプション #4:セクション名
+  % 整合性の確認
+  \ifnum\@kian@sect@startstate<0\else%
+    \ifnum\@kian@sect@currentstate<#1\else\relax%
+      \ifcase\@kian@sect@currentstate%
+        \def\@tempfuna{Z}\or\def\@tempfuna{A}\or\def\@tempfuna{B}\or\def\@tempfuna{C}\or%
+        \def\@tempfuna{D}\or\def\@tempfuna{E}\or\def\@tempfuna{F}\or\def\@tempfuna{G}\fi%
+      \ifcase#1%
+        \def\@tempfunb{Z}\or\def\@tempfunb{A}\or\def\@tempfunb{B}\or\def\@tempfunb{C}\or%
+        \def\@tempfunb{D}\or\def\@tempfunb{E}\or\def\@tempfunb{F}\or\def\@tempfunb{G}\fi%
+      \errmessage{Package kian-sect Error: Bad section order from "\@tempfuna" to "\@tempfunb"}%
+    \fi%
+    \begingroup%
+      \ifnum#1>2%
+        \@tempcnta=#1\relax\advance\@tempcnta by-\@kian@sect@currentstate\relax%
+        \ifnum\@tempcnta>1%
+          \ifcase\@kian@sect@currentstate%
+            \def\@tempfuna{Z}\or\def\@tempfuna{A}\or\def\@tempfuna{B}\or\def\@tempfuna{C}\or%
+            \def\@tempfuna{D}\or\def\@tempfuna{E}\or\def\@tempfuna{F}\or\def\@tempfuna{G}\fi%
+          \ifcase#1%
+            \def\@tempfunb{Z}\or\def\@tempfunb{A}\or\def\@tempfunb{B}\or\def\@tempfunb{C}\or%
+            \def\@tempfunb{D}\or\def\@tempfunb{E}\or\def\@tempfunb{F}\or\def\@tempfunb{G}\fi%
+          \message{! Package kian-sect Warning: Discrete section order from "\@tempfuna" to "\@tempfunb".%
+            ^^Jl.\number\inputlineno}%
+        \fi%
+      \fi%
+    \endgroup%
+  \fi%
+  % オプションの保存
+  \ifcase#1%
+    \def\@kian@sect@sectionZoption{#3}\or\def\@kian@sect@sectionAoption{#3}\or%
+    \def\@kian@sect@sectionBoption{#3}\or\def\@kian@sect@sectionCoption{#3}\or%
+    \def\@kian@sect@sectionDoption{#3}\or\def\@kian@sect@sectionEoption{#3}\or%
+    \def\@kian@sect@sectionFoption{#3}\or\def\@kian@sect@sectionGoption{#3}\fi%
+  % セクションカウンターを進める
+  \kian@sect@stepsectionvalue{#1}%
+  % 開始セクションレベルを記録
+  \ifnum\@kian@sect@startstate<0%
+    \def\@kian@sect@startstate{#1}%
+    % 縦空白を入れる
+    \ifx#2*%
+      \ifcase#1%
+        \vskip\@kian@sect@separateZ@star\baselineskip\relax\or%
+        \vskip\@kian@sect@separateA@star\baselineskip\relax\or%
+        \vskip\@kian@sect@separateB@star\baselineskip\relax\or%
+        \vskip\@kian@sect@separateC@star\baselineskip\relax\or%
+        \vskip\@kian@sect@separateD@star\baselineskip\relax\or%
+        \vskip\@kian@sect@separateE@star\baselineskip\relax\or%
+        \vskip\@kian@sect@separateF@star\baselineskip\relax\or%
+        \vskip\@kian@sect@separateG@star\baselineskip\relax\fi%
+    \else%
+      \ifcase#1%
+        \vskip\@kian@sect@separateZ\baselineskip\relax\or%
+        \vskip\@kian@sect@separateA\baselineskip\relax\or%
+        \vskip\@kian@sect@separateB\baselineskip\relax\or%
+        \vskip\@kian@sect@separateC\baselineskip\relax\or%
+        \vskip\@kian@sect@separateD\baselineskip\relax\or%
+        \vskip\@kian@sect@separateE\baselineskip\relax\or%
+        \vskip\@kian@sect@separateF\baselineskip\relax\or%
+        \vskip\@kian@sect@separateG\baselineskip\relax\fi%
+    \fi%
+  \fi%
+  % セクションレベルのみを変更(現在セクションレベルを記録,箇条書きをクリア,字下げを適用)
+  \kian@state{#1}%
+  % 目次に記録
+  \ifx#2*\else\ifnum#1<\c@tocdepth\kian@sect@outputtoc{#1}[#3]{#4}\fi\fi%
+  % 相互参照のラベルの作成
+  \kian@sect@makelabel{#1}%
+  % 改段落を臨時改段落に変更
+  \let\par\kian@sect@sectionpar%
+  % セクション標題がある場合
+  \ifx\relax#4\relax\else%
+    % セクション標題を出力
+    \kian@sect@Printsections{#4}%
+    % 改ページを抑制
+    \ifcase#1\nopagebreak[4]\or\nopagebreak[4]\or\nopagebreak[2]\or\nopagebreak[1]\or\nopagebreak[0]\fi%
+  \fi%
+  % 改段落
+  \@ifnextchar\nolinebreak{}{\par}%
+}%
+\def\kian@sectionZ{\kian@sect@section{0}}%
+\def\kian@sectionA{\kian@sect@section{1}}%
+\def\kian@sectionB{\kian@sect@section{2}}%
+\def\kian@sectionC{\kian@sect@section{3}}%
+\def\kian@sectionD{\kian@sect@section{4}}%
+\def\kian@sectionE{\kian@sect@section{5}}%
+\def\kian@sectionF{\kian@sect@section{6}}%
+\def\kian@sectionG{\kian@sect@section{7}}%
+\@ifundefined{sectionZ}{\let\sectionZ\kian@sectionZ}{}%
+\@ifundefined{sectionA}{\let\sectionA\kian@sectionA}{}%
+\@ifundefined{sectionB}{\let\sectionB\kian@sectionB}{}%
+\@ifundefined{sectionC}{\let\sectionC\kian@sectionC}{}%
+\@ifundefined{sectionD}{\let\sectionD\kian@sectionD}{}%
+\@ifundefined{sectionE}{\let\sectionE\kian@sectionE}{}%
+\@ifundefined{sectionF}{\let\sectionF\kian@sectionF}{}%
+\@ifundefined{sectionG}{\let\sectionG\kian@sectionG}{}%
+\@ifundefined{SecZ}{\let\SecZ\kian@sectionZ}{}%
+\@ifundefined{SecA}{\let\SecA\kian@sectionA}{}%
+\@ifundefined{SecB}{\let\SecB\kian@sectionB}{}%
+\@ifundefined{SecC}{\let\SecC\kian@sectionC}{}%
+\@ifundefined{SecD}{\let\SecD\kian@sectionD}{}%
+\@ifundefined{SecE}{\let\SecE\kian@sectionE}{}%
+\@ifundefined{SecF}{\let\SecF\kian@sectionF}{}%
+\@ifundefined{SecG}{\let\SecG\kian@sectionG}{}%
+
+%==========================================================%
+% 一般の場合との整合性
+
+%\def\kian@sect@aclass{%
+%  \let\part\sectionZ%
+%  \let\section\sectionA%
+%  \let\subsection\sectionB%
+%  \let\subsubsection\sectionC%
+%  \let\paragraph\sectionD%
+%  \let\subparagraph\sectionE%
+%}%
+%\def\kian@sect@bclass{%
+%  \let\part\sectionZ%
+%  \let\chapter\sectionA%
+%  \let\section\sectionB%
+%  \let\subsection\sectionC%
+%  \let\subsubsection\sectionD%
+%  \let\paragraph\sectionE%
+%  \let\subparagraph\sectionF%
+%}%
+%\kian@sect@aclass%
+%\@ifclassloaded{jreport}{\kian@sect@bclass}{}%
+%\@ifclassloaded{jbook}{\kian@sect@bclass}{}%
+%\@ifclassloaded{jsbook}{\kian@sect@bclass}{}%
+
+%==========================================================%
+% 目次
+
+%======================================%
+% 目次を入れる関数
+
+\def\tableofcontents{%
+  \dimen0=3\zw\relax\advance\dimen0 by2\kanjiskip\relax%
+  \noindent\hbox to\dimen0{\kanjiskip=\z@ plus1fil minus1fil{{目}{次}}}\endgraf%"目"次
+  \@starttoc{toc}%
+}%
+
+%======================================%
+% 目次を表示するレベルの深さ
+
+\c@tocdepth=3%
+
+%======================================%
+% 目次の字下げを適用
+
+\def\kian@sect@applytochlength#1{%
+  % カウンター
+  \kian@sect@stepsectionvalue{#1}%
+  % 基本長
+  \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax%
+  % セクション記番号の字下げ
+  \dimen1=#1\dimen0\relax%
+  \ifnum#1>1\ifnum\c@kian@sectionA=0\advance\dimen1 by-\dimen0\fi\fi%
+  \leftskip=\dimen1\relax%
+  % 字下げの調整
+  \dimen2=\dimen0\relax%
+  \ifnum#1=0\dimen2=\z@\relax\fi%
+  \hskip-\dimen2\relax%
+}%
+
+%======================================%
+% 目次の書式設定
+
+\def\l@sectionZ#1#2{\noindent\kian@sect@applytochlength{0}#1\hglue1\zw\dotfill\hglue1\zw#2\endgraf}%
+\def\l@sectionA#1#2{\noindent\kian@sect@applytochlength{1}#1\hglue1\zw\dotfill\hglue1\zw#2\endgraf}%
+\def\l@sectionB#1#2{\noindent\kian@sect@applytochlength{2}#1\hglue1\zw\dotfill\hglue1\zw#2\endgraf}%
+\def\l@sectionC#1#2{\noindent\kian@sect@applytochlength{3}#1\hglue1\zw\dotfill\hglue1\zw#2\endgraf}%
+\def\l@sectionD#1#2{\noindent\kian@sect@applytochlength{4}#1\hglue1\zw\dotfill\hglue1\zw#2\endgraf}%
+\def\l@sectionE#1#2{\noindent\kian@sect@applytochlength{5}#1\hglue1\zw\dotfill\hglue1\zw#2\endgraf}%
+\def\l@sectionF#1#2{\noindent\kian@sect@applytochlength{6}#1\hglue1\zw\dotfill\hglue1\zw#2\endgraf}%
+\def\l@sectionG#1#2{\noindent\kian@sect@applytochlength{7}#1\hglue1\zw\dotfill\hglue1\zw#2\endgraf}%
+
+%======================================%
+% 目次に追加
+
+\def\kian@sect@outputtoc#1[#2]#3{{% #1:セクションレベル #2 オプション #3:セクション標題
+  % 準備
+  \ifcase#1%
+    \def\@tempfuna{Z}\or\def\@tempfuna{A}\or\def\@tempfuna{B}\or\def\@tempfuna{C}\or%
+    \def\@tempfuna{D}\or\def\@tempfuna{E}\or\def\@tempfuna{F}\or\def\@tempfuna{G}\fi%
+  \def\@tempfunb{\expandafter\the\csname c@kian@section\@tempfuna\endcsname}% \the\c@kian@sectionS
+  \def\@tempfunc{\protect\csname printsection\@tempfuna\endcsname}%           \printsectionS
+  \def\@tempfund{\protect\csname Printsection\@tempfuna\endcsname}%           \PrintsectionS
+  % オプションによる修正
+  \def\@tempfune{\protect\kian@sect@applysectionoption{%
+    \@kian@sect@sectionZoption:\@kian@sect@sectionAoption:\@kian@sect@sectionBoption:\@kian@sect@sectionCoption:%
+    \@kian@sect@sectionDoption:\@kian@sect@sectionEoption:\@kian@sect@sectionFoption:\@kian@sect@sectionGoption}}%
+  % 追加
+  \ifx\relax#3\relax%
+    \addcontentsline{toc}{section\@tempfuna}{{\@tempfune\expandafter\expandafter\@tempfunc{\@tempfunb}}}\else%
+    \addcontentsline{toc}{section\@tempfuna}{{\@tempfune\expandafter\expandafter\@tempfund{\@tempfunb}{#3}}}\fi%
+}}%
+\def\kian@sect@outputtoc@A#1#2{% #1:セクションレベル #2:新しい\printsectionS
+  \def\@tempfunh{\expandafter\protect\expandafter\let\expandafter\protect\csname printsection#1\endcsname\protect#2}%
+}%
+
+%==========================================================%
+% 相互参照
+
+%======================================%
+% 相互参照の深度
+
+\def\kian@refdepth#1{%
+  \def\@kian@sect@refdepth{#1}%
+}%
+\kian@refdepth{1}% デフォルトの設定
+\@ifundefined{refdepth}{\let\refdepth\kian@refdepth}{}%
+
+%======================================%
+% 相互参照のラベルの設定
+
+\def\kian@sect@makelabel#1{% #1:現在セクションレベル
+  \def\@currentlabel{%
+    % オプションいよる修正
+    \expandafter\ifx\expandafter=\@kian@sect@sectionZoption\else%
+      \protect\def\protect\@kian@sect@sectionZoption{\@kian@sect@sectionZoption}\fi%
+    \expandafter\ifx\expandafter=\@kian@sect@sectionAoption\else%
+      \protect\def\protect\@kian@sect@sectionAoption{\@kian@sect@sectionAoption}\fi%
+    \expandafter\ifx\expandafter=\@kian@sect@sectionBoption\else%
+      \protect\def\protect\@kian@sect@sectionBoption{\@kian@sect@sectionBoption}\fi%
+    \expandafter\ifx\expandafter=\@kian@sect@sectionCoption\else%
+      \protect\def\protect\@kian@sect@sectionCoption{\@kian@sect@sectionCoption}\fi%
+    \expandafter\ifx\expandafter=\@kian@sect@sectionDoption\else%
+      \protect\def\protect\@kian@sect@sectionDoption{\@kian@sect@sectionDoption}\fi%
+    \expandafter\ifx\expandafter=\@kian@sect@sectionEoption\else%
+      \protect\def\protect\@kian@sect@sectionEoption{\@kian@sect@sectionEoption}\fi%
+    \expandafter\ifx\expandafter=\@kian@sect@sectionFoption\else%
+      \protect\def\protect\@kian@sect@sectionFoption{\@kian@sect@sectionFoption}\fi%
+    \expandafter\ifx\expandafter=\@kian@sect@sectionGoption\else%
+      \protect\def\protect\@kian@sect@sectionGoption{\@kian@sect@sectionGoption}\fi%
+    % 表示
+    \protect\kian@sect@printsections[-1]{,#1}%
+      {\the\c@kian@sectionZ,\the\c@kian@sectionA,\the\c@kian@sectionB,\the\c@kian@sectionC,%
+       \the\c@kian@sectionD,\the\c@kian@sectionE,\the\c@kian@sectionF,\the\c@kian@sectionG}{}%
+  }%
+}%
+
+%==========================================================%
+% OTFパッケージの修正（セクション標題に使えない件）
+
+%======================================%
+% \ajMaru
+
+\AtBeginDocument{%
+  \@ifundefined{ajMaru}%
+    {\let\ajKakko\kian@undefinederror}%
+    {\def\ajMaru#1{{%
+      \ifnum#1>0%
+        \ifnum#1<21\@tempcnta=#1\advance\@tempcnta by7554\CID{\@tempcnta}\else%
+        \ifnum#1=21\CID{8091}\else%
+        \ifnum#1<32\@tempcnta=#1\advance\@tempcnta by8080\CID{\@tempcnta}\else%
+        \ifnum#1<101\@tempcnta=#1\advance\@tempcnta by10212\CID{\@tempcnta}\else%
+        \errmessage{Package kian-sect Error: Too big number "#1"}%
+        \fi\fi\fi\fi%
+      \else%
+        \errmessage{Package kian-sect Error: Too small number "#1"}%
+      \fi%
+    }}}%
+}%
+
+%======================================%
+% \ajKakko
+
+\AtBeginDocument{%
+  \@ifundefined{ajKakko}%
+    {\let\ajKakko\kian@undefinederror}%
+    {\def\ajKakko#1{{%
+      \ifnum#1>0%
+        \ifnum#1<21\@tempcnta=#1\advance\@tempcnta by8070\CID{\@tempcnta}\else%
+        \ifnum#1<101\@tempcnta=#1\advance\@tempcnta by9873\CID{\@tempcnta}\else%
+        \errmessage{Package kian-sect Error: Too big number "#1"}%
+        \fi\fi%
+      \else%
+        \errmessage{Package kian-sect Error: Too small number "#1"}%
+      \fi%
+    }}}%
+}%
+
+%==========================================================%
+% 終了
+
+\endinput%

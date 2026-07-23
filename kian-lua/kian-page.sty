@@ -1,0 +1,844 @@
+% kian-page.sty
+% Copyright (C) 2016-2021  Seiichiro HATA
+% Modified 2026 by Shinichi Noro（野呂伸一）: adapted for LuaLaTeX (luatexja).
+%
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+%\NeedsTeXFormat{pLaTeX2e}%
+\ProvidesPackage{kian-page}[2021/07/06 v05]%
+
+%==============================================================================%
+% ページ設定
+
+% 予約語
+% \if@jsclass \@jsclasstrue \@jsclassfalse
+% \head,\temphead,\foot,\thefootpage,\endmark,\tempfoot
+
+%==========================================================%
+% カウンターの準備
+
+\@ifundefined{@tempcnta}{\newcount\@tempcnta}{}%
+\@ifundefined{@tempcntb}{\newcount\@tempcntb}{}%
+
+%==========================================================%
+% クラスの判別
+
+\newif\if@jsclass\@jsclassfalse%
+\@ifclassloaded{jsarticle}{\@jsclasstrue}{}%
+\@ifclassloaded{ltjsarticle}{\@jsclasstrue}{}%  % LuaLaTeX 対応追加
+\@ifclassloaded{jsbook}{\@jsclasstrue}{}%
+
+%==========================================================%
+% コンパイル回数
+
+\AtEndDocument{%
+  \vskip-\baselineskip\leavevmode% バグ修正のため
+  \@ifundefined{r@kian@numberoftimes}%
+    {\@tempcnta=1\relax}%
+    {\@tempcnta=\r@kian@numberoftimes\relax}%
+  \immediate\write\@auxout{\string\newlabel{kian@numberoftimes}{\the\@tempcnta}}%
+}%
+
+%==========================================================%
+% 長さの定義
+
+% 文字の大きさの基本設定（12pt）
+\newdimen\kian@page@standardsize%
+
+%==========================================================%
+% フォントと文字間幅
+
+% 全角フォントと半角フォントのバランス
+%\DeclareFontShape{JY1}{mc}{m}{n}{<->s*[1.00000]jis}{}%
+%\DeclareFontShape{JY1}{gt}{m}{n}{<->s*[1.00000]jis}{}%
+%\DeclareFontShape{JT1}{mc}{m}{n}{<->s*[1.00000]jis}{}%
+%\DeclareFontShape{JT1}{gt}{m}{n}{<->s*[1.00000]jis}{}%
+
+% フォントの拡大の倍率
+\if@jsclass\gdef\kian@page@fontscale{2259449}\else\gdef\kian@page@fontscale{2171325}\fi%
+
+%======================================%
+% フォントと文字間幅の設定
+
+% 使用法:\kian@kiansize{12pt}
+\def\kian@kiansize#1{% #1:フォントサイズ
+  % フォント
+  \kian@page@standardsize=#1%
+  \def\kian@page@changefontsize##1{% ##1:フォントサイズの修正分
+    % 大きさを修正（約 1.07 倍）
+    % （分割計算はオーバーフロー防止のため）
+    \dimen0=\kian@page@standardsize\multiply\dimen0 by##1\relax\divide\dimen0 by20\relax%
+    \dimen1=\dimen0\dimen2=\dimen0\dimen3=\dimen0%
+    \divide\dimen1 by65536\relax%
+    \advance\dimen2 by-65536\dimen1\relax%
+    \advance\dimen3 by-65536\dimen1\relax%
+    \divide\dimen2 by256\relax%
+    \advance\dimen3 by-256\dimen2\relax%
+    \multiply\dimen1 by\kian@page@fontscale\relax\divide\dimen1 by32\relax%
+    \multiply\dimen2 by\kian@page@fontscale\relax\divide\dimen2 by8192\relax%
+    \multiply\dimen3 by\kian@page@fontscale\relax\divide\dimen3 by2097152\relax%
+    \dimen4=\z@%
+    \advance\dimen4 by\dimen1\relax% 上位 8bit
+    \advance\dimen4 by\dimen2\relax% 中位 8bit
+    \advance\dimen4 by\dimen3\relax% 下位 8bit
+    % フォントの指定
+    \fontsize{\dimen4}{\baselineskip}\selectfont%
+    % 文字間隔（全角全角）
+    \kanjiskip=.03\zw plus.300\zw minus.030\zw%
+    % 文字間隔（全角半角）
+    \xkanjiskip=\kanjiskip%
+    \advance\xkanjiskip by+.5\zw\relax%
+    \setbox0=\hbox{0}\advance\xkanjiskip by-.5\wd0\relax%
+  }%
+  % フォントサイズの変更コマンド
+  \def\tiny{\kian@page@changefontsize{10}}%         50.0%
+  %\def\Tiny{\kian@page@changefontsize{12}}%         60.0%
+  \def\scriptsize{\kian@page@changefontsize{14}}%   70.0%
+  \def\footnotesize{\kian@page@changefontsize{16}}% 80.0%
+  \def\small{\kian@page@changefontsize{18}}%        90.0%
+  \def\normalsize{\kian@page@changefontsize{20}}%  100.0%
+  \def\large{\kian@page@changefontsize{25}}%       125.0%
+  \def\Large{\kian@page@changefontsize{30}}%       150.0%
+  \def\LARGE{\kian@page@changefontsize{35}}%       175.0%
+  \def\huge{\kian@page@changefontsize{40}}%        200.0%
+  \def\Huge{\kian@page@changefontsize{45}}%        225.0%
+  %\def\HUGE{\kian@page@changefontsize{50}}%        250.0%
+  \normalsize%
+  % インデント幅
+  \parindent=1\zw\advance\parindent by\kanjiskip\relax%
+}%
+\@ifundefined{kiansize}{\let\kiansize\kian@kiansize}{}%
+
+% 初期設定
+\ifnum\@ptsize=-2\kian@kiansize{8truept}\else%
+\ifnum\@ptsize=-1\kian@kiansize{9truept}\else%
+\ifnum\@ptsize=0\kian@kiansize{10truept}\else%
+\ifnum\@ptsize=1\kian@kiansize{11truept}\else%
+\ifnum\@ptsize=2\kian@kiansize{12truept}\else%
+\ifnum\@ptsize=4\kian@kiansize{14truept}\else%
+\ifnum\@ptsize=7\kian@kiansize{17truept}\else%
+\ifnum\@ptsize=10\kian@kiansize{20truept}\else%
+\ifnum\@ptsize=11\kian@kiansize{21truept}\else%
+\ifnum\@ptsize=15\kian@kiansize{25truept}\else%
+\ifnum\@ptsize=20\kian@kiansize{30truept}\else%
+\ifnum\@ptsize=26\kian@kiansize{36truept}\else%
+\ifnum\@ptsize=33\kian@kiansize{43truept}\else%
+\ifnum\@ptsize=1200\kian@kiansize{12trueQ}\else%
+\ifnum\@ptsize=1400\kian@kiansize{14trueQ}\else%
+\kian@kiansize{12truept}%
+\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi%
+
+%==========================================================%
+% 改行幅
+
+% 26行に設定
+\dimen0=240truemm\divide\dimen0 by26\relax%
+\normalbaselineskip=\dimen0 plus.004\zh minus.004\zh%
+\baselineskip=\normalbaselineskip%
+\parskip=\z@%
+
+%==========================================================%
+% 用紙設定
+
+\def\kian@papersize#1{%
+  \def\@tempfuna{a4}\def\@tempfunb{p}\def\@tempfunc{=}%
+  \@for\@tempfund:=#1\do{%
+    \def\@tempfune{a3paper}\ifx\@tempfund\@tempfune\def\@tempfuna{a3}\else%
+    \def\@tempfune{a4paper}\ifx\@tempfund\@tempfune\def\@tempfuna{a4}\else%
+    \def\@tempfune{portrait}\ifx\@tempfund\@tempfune\def\@tempfunb{p}\else%
+    \def\@tempfune{landscape}\ifx\@tempfund\@tempfune\def\@tempfunb{l}\else%
+    \def\@tempfune{papersize}\ifx\@tempfund\@tempfune\def\@tempfunc{P}\else%
+    \errmessage{Package kian-page Error: Bad option "\@tempfund"}%
+    \fi\fi\fi\fi\fi%
+  }%
+  \edef\@tempfund{\@tempfuna\@tempfunb}%
+  \edef\@tempfune{a3p}\ifx\@tempfund\@tempfune%
+    % A3縦(297mmX420mm)
+    \paperwidth=297truemm\paperheight=420truemm%
+    \def\kian@narrowmargin{%
+      % 横（左15mm，右15mm，本文267mm）
+      \hoffset=-1truein%              0-1
+      \oddsidemargin=15truemm%        1-2
+      \evensidemargin=\oddsidemargin% 1-2
+      \textwidth=267truemm%           2-3
+      % 縦（上25mm，下15mm，本文380mm）
+      \voffset=-1truein%              0-1
+      \topmargin=6truemm%             1-2 (25-3)/2-5
+      \headheight=8truemm%            2-3 3+5
+      \headsep=6truemm%               3-4 (25-3)/2-5
+      \topskip=9.230769truemm%        4-5 \baselineskip
+      \textheight=385truemm%          4-6 380+5
+      \footskip=9truemm%              6-7 (15-3)/2+3
+      % 段組
+      %\columnwidth=0truemm%           段組の段の幅
+      \columnsep=17.678571truemm%     段組の段間のスペース 50/2*297/420
+      \columnseprule=0pt%             段組の段間の線の太さ
+    }%
+    \@ifundefined{narrowmargin}{\def\narrowmargin{\kian@narrowmargin}}{}%
+    \def\kian@normalmargin{%
+      % 横（左27mm，右35mm，本文235mm）
+      \hoffset=-1truein%              0-1
+      \oddsidemargin=27truemm%        1-2
+      \evensidemargin=\oddsidemargin% 1-2
+      \textwidth=235truemm%           2-3
+      % 縦（上30mm，下20mm，本文370mm）
+      \voffset=-1truein%              0-1
+      \topmargin=8.5truemm%           1-2 (30-3)/2-5
+      \headheight=8truemm%            2-3 3+5
+      \headsep=8.5truemm%             3-4 (30-3)/2-5
+      \topskip=9.230769truemm%        4-5 \baselineskip
+      \textheight=375truemm%          4-6 370+5
+      \footskip=11.5truemm%           6-7 (20-3)/2+3
+      % 段組
+      %\columnwidth=0truemm%           段組の段の幅
+      \columnsep=17.678571truemm%     段組の段間のスペース 50/2*297/420
+      \columnseprule=0pt%             段組の段間の線の太さ
+    }%
+    \@ifundefined{normalmargin}{\def\normalmargin{\kian@normalmargin}}{}%
+    \kian@normalmargin%
+    % PDF「export XDPT="dvipdfmx -p a3"」の代わり
+    \expandafter\ifx\@tempfunc P%
+      \AtBeginDvi{\special{pdf: pagesize width 297truemm height 420truemm}}%
+    \fi%
+  \else%
+  \edef\@tempfune{a3l}\ifx\@tempfund\@tempfune%
+    % A3横(420mmX297mm)
+    \paperwidth=420truemm\paperheight=297truemm%
+    \def\kian@narrowmargin{%
+      % 横（左25mm，右15mm，本文380mm）
+      \hoffset=-1truein%              0-1
+      \oddsidemargin=25truemm%        1-2
+      \evensidemargin=\oddsidemargin% 1-2
+      \textwidth=380truemm%           2-3
+      % 縦（上15mm，下15mm，本文267mm）
+      \voffset=-1truein%              0-1
+      \topmargin=1truemm%             1-2 (15-3)/2-5
+      \headheight=8truemm%            2-3 3+5
+      \headsep=1truemm%               3-4 (15-3)/2-5
+      \topskip=9.230769truemm%        4-5 \baselineskip
+      \textheight=272truemm%          4-6 267+5
+      \footskip=9truemm%              6-7 (15-3)/2+3
+      % 段組
+      %\columnwidth=0truemm%           段組の段の幅
+      \columnsep=25truemm%            段組の段間のスペース 50/2*420/420
+      \columnseprule=0pt%             段組の段間の線の太さ
+    }%
+    \@ifundefined{narrowmargin}{\def\narrowmargin{\kian@narrowmargin}}{}%
+    \def\kian@normalmargin{%
+      % 横（左30mm，右20mm，本文370mm）
+      \hoffset=-1truein%              0-1
+      \oddsidemargin=30truemm%        1-2
+      \evensidemargin=\oddsidemargin% 1-2
+      \textwidth=370truemm%           2-3
+      % 縦（上35mm，下27mm，本文235mm）
+      \voffset=-1truein%              0-1
+      \topmargin=11truemm%            1-2 (35-3)/2-5
+      \headheight=8truemm%            2-3 3+5
+      \headsep=11truemm%              3-4 (35-3)/2-5
+      \topskip=9.230769truemm%        4-5 \baselineskip
+      \textheight=240truemm%          4-6 235+5
+      \footskip=15truemm%             6-7 (27-3)/2+3
+      % 段組
+      %\columnwidth=0truemm%           段組の段の幅
+      \columnsep=25truemm%            段組の段間のスペース 50/2*420/420
+      \columnseprule=0pt%             段組の段間の線の太さ
+    }%
+    \@ifundefined{normalmargin}{\def\normalmargin{\kian@normalmargin}}{}%
+    \kian@normalmargin%
+    % PDF「export XDPT="dvipdfmx -p a3 -l"」の代わり
+    \expandafter\ifx\@tempfunc P%
+      \AtBeginDvi{\special{pdf: pagesize width 420truemm height 297truemm}}%
+    \fi%
+  \else%
+  \edef\@tempfune{a4p}\ifx\@tempfund\@tempfune%
+    % A4縦(210mmX297mm)
+    \paperwidth=210truemm\paperheight=297truemm%
+    % 狭い余白
+    \def\kian@narrowmargin{%
+      % 横（左25mm，右15mm，本文170mm）
+      \hoffset=-1truein%              0-1
+      \oddsidemargin=25truemm%        1-2
+      \evensidemargin=\oddsidemargin% 1-2
+      \textwidth=170truemm%           2-3
+      % 縦（上15mm，下15mm，本文267mm）
+      \voffset=-1truein%              0-1
+      \topmargin=1truemm%             1-2 (15-3)/2-5
+      \headheight=8truemm%            2-3 3+5
+      \headsep=1truemm%               3-4 (15-3)/2-5
+      \topskip=9.230769truemm%        4-5 \baselineskip
+      \textheight=272truemm%          4-6 267+5
+      \footskip=9truemm%              6-7 (15-3)/2+3
+      % 段組
+      %\columnwidth=0truemm%           段組の段の幅
+      \columnsep=12.5truemm%          段組の段間のスペース 50/2*210/420
+      \columnseprule=0pt%             段組の段間の線の太さ
+    }%
+    \@ifundefined{narrowmargin}{\def\narrowmargin{\kian@narrowmargin}}{}%
+    % 標準余白
+    \def\kian@normalmargin{%
+      % 横（左30mm，右20mm，本文160mm）
+      \hoffset=-1truein%              0-1
+      \oddsidemargin=30truemm%        1-2
+      \evensidemargin=\oddsidemargin% 1-2
+      \textwidth=160truemm%           2-3
+      % 縦（上35mm，下27mm，本文235mm）
+      \voffset=-1truein%              0-1
+      \topmargin=11truemm%            1-2 (35-3)/2-5
+      \headheight=8truemm%            2-3 3+5
+      \headsep=11truemm%              3-4 (35-3)/2-5
+      \topskip=9.230769truemm%        4-5 \baselineskip
+      \textheight=240truemm%          4-6 235+5
+      \footskip=15truemm%             6-7 (27-3)/2+3
+      % 段組
+      %\columnwidth=0truemm%          段組の段の幅
+      \columnsep=12.5truemm%          段組の段間のスペース 50/2*210/420
+      \columnseprule=0pt%             段組の段間の線の太さ
+    }%
+    \@ifundefined{normalmargin}{\def\normalmargin{\kian@normalmargin}}{}%
+    \kian@normalmargin%
+    % PDF
+    \expandafter\ifx\@tempfunc P%
+      \AtBeginDvi{\special{pdf: pagesize width 210truemm height 297truemm}}%
+    \fi%
+  \else%
+  \edef\@tempfune{a4l}\ifx\@tempfund\@tempfune%
+    % A4横(297mmX210mm)
+    \paperwidth=297truemm\paperheight=210truemm%
+    \def\kian@narrowmargin{%
+      % 横（左15mm，右15mm，本文267mm）
+      \hoffset=-1truein%              0-1
+      \oddsidemargin=15truemm%        1-2
+      \evensidemargin=\oddsidemargin% 1-2
+      \textwidth=267truemm%           2-3
+      % 縦（上25mm，下15mm，本文170mm）
+      \voffset=-1truein%              0-1
+      \topmargin=6.0truemm%           1-2 (25-3)/2-5
+      \headheight=8truemm%            2-3 3+5
+      \headsep=6.0truemm%             3-4 (25-3)/2-5
+      \topskip=9.230769truemm%        4-5 \baselineskip
+      \textheight=175truemm%          4-6 170+5
+      \footskip=9.0truemm%            6-7 (15-3)/2+3
+      % 段組
+      %\columnwidth=0truemm%           段組の段の幅
+      \columnsep=17.678571truemm%     段組の段間のスペース 50/2*297/420
+      \columnseprule=0pt%             段組の段間の線の太さ
+    }%
+    \@ifundefined{narrowmargin}{\def\narrowmargin{\kian@narrowmargin}}{}%
+    \def\kian@normalmargin{%
+      % 横（左27mm，右35mm，本文235mm）
+      \hoffset=-1truein%              0-1
+      \oddsidemargin=27truemm%        1-2
+      \evensidemargin=\oddsidemargin% 1-2
+      \textwidth=235truemm%           2-3
+      % 縦（上30mm，下20mm，本文160mm）
+      \voffset=-1truein%              0-1
+      \topmargin=8.5truemm%           1-2 (30-3)/2-5
+      \headheight=8truemm%            2-3 3+5
+      \headsep=8.5truemm%             3-4 (30-3)/2-5
+      \topskip=9.230769truemm%        4-5 \baselineskip
+      \textheight=165truemm%          4-6 160+5
+      \footskip=11.5truemm%           6-7 (20-3)/2+3
+      % 段組
+      %\columnwidth=0truemm%           段組の段の幅
+      \columnsep=17.678571truemm%     段組の段間のスペース 50/2*297/420
+      \columnseprule=0pt%             段組の段間の線の太さ
+    }%
+    \@ifundefined{normalmargin}{\def\normalmargin{\kian@normalmargin}}{}%
+    \kian@normalmargin%
+    % PDF
+    \expandafter\ifx\@tempfunc P%
+      \AtBeginDvi{\special{pdf: pagesize width 297truemm height 210truemm}}%
+    \fi%
+  \else%
+    \errmessage{Package kian-page Error: Bad papersize "\@tempfund"}%
+  \fi\fi\fi\fi%
+}%
+\@ifundefined{papersize}{\let\papersize\kian@papersize}{}%
+
+% ヘッダを狭くする
+\def\kian@narrowhead{%
+  \advance\topmargin by-5truemm\relax%   1-2
+  \advance\headsep by-5truemm\relax%     3-4
+  \advance\textheight by10truemm\relax%  4-6
+  \ifdim\topmargin<\z@%
+    \advance\textheight by\topmargin\relax%
+    \topmargin=\z@%
+  \fi%
+  \ifdim\headsep<\z@%
+    \advance\textheight by\headsep\relax%
+    \headsep=\z@%
+  \fi%
+}%
+\@ifundefined{narrowhead}{\let\narrowhead\kian@narrowhead}{}%
+
+% A3縦(297mmX420mm)
+\ifdim\paperwidth>296truemm\ifdim\paperwidth<298truemm%
+\ifdim\paperheight>419truemm\ifdim\paperheight<421truemm%
+  \kian@papersize{a3paper,portrait}%
+\fi\fi%
+\fi\fi%
+
+% A3横(420mmX297mm)
+\ifdim\paperwidth>419truemm\ifdim\paperwidth<421truemm%
+\ifdim\paperheight>296truemm\ifdim\paperheight<298truemm%
+  \kian@papersize{a3paper,landscape}%
+\fi\fi%
+\fi\fi%
+
+% A4縦(210mmX297mm)
+\ifdim\paperwidth>209truemm\ifdim\paperwidth<211truemm%
+\ifdim\paperheight>296truemm\ifdim\paperheight<298truemm%
+  \kian@papersize{a4paper,portrait}%
+\fi\fi%
+\fi\fi%
+
+% A4横(297mmX210mm)
+\ifdim\paperwidth>296truemm\ifdim\paperwidth<298truemm%
+\ifdim\paperheight>209truemm\ifdim\paperheight<211truemm%
+  \kian@papersize{a4paper,landscape}%
+\fi\fi%
+\fi\fi%
+
+%==========================================================%
+% ページスタイルの定義
+
+%======================================%
+% ページ番号
+
+\def\kian@Stamppagenumber{%
+  \gdef\@kian@page@Stamppagenumber{Y}%
+}%
+\@ifundefined{Stamppagenumber}{\let\Stamppagenumber\kian@Stamppagenumber}{}%
+\def\kian@Dontstamppagenumber{%
+  \gdef\@kian@page@Stamppagenumber{N}%
+}%
+\@ifundefined{Dontstamppagenumber}{\let\Dontstamppagenumber\kian@Dontstamppagenumber}{}%
+\def\@kian@page@Stamppagenumber{Y}% デフォルトの定義
+
+\def\kian@stamppagenumber{%
+  \gdef\@kian@page@stamppagenumber{Y}%
+}%
+\@ifundefined{stamppagenumber}{\let\stamppagenumber\kian@stamppagenumber}{}%
+\def\kian@dontstamppagenumber{%
+  \gdef\@kian@page@stamppagenumber{N}%
+}%
+\@ifundefined{dontstamppagenumber}{\let\dontstamppagenumber\kian@dontstamppagenumber}{}%
+\def\@kian@page@stamppagenumber{-}% デフォルトの定義
+
+% 最終ページ
+\AtEndDocument{%
+  \expandafter\ifx\@kian@page@stamppagenumber -%
+    \ifnum\c@page=1\gdef\@kian@page@stamppagenumber{N}\fi%
+  \fi%
+}%
+
+%======================================%
+% 文書終了のマーク
+
+\def\kian@endmark#1{%
+  \def\@kian@page@endmark{#1}%
+}%
+\kian@endmark{}%
+\@ifundefined{endmark}{\let\endmark\kian@endmark}{}%
+
+\def\kian@Stampendmark{%
+  \gdef\@kian@page@Stampendmark{Y}%
+}%
+\@ifundefined{Stampendmark}{\let\Stampendmark\kian@Stampendmark}{}%
+\def\kian@Dontstampendmark{%
+  \gdef\@kian@page@Stampendmark{N}%
+}%
+\@ifundefined{Dontstampendmark}{\let\Dontstampendmark\kian@Dontstampendmark}{}%
+\def\@kian@page@Stampendmark{Y}% デフォルトの定義
+
+\def\kian@stampendmark{%
+  \gdef\@kian@page@stampendmark{Y}%
+}%
+\@ifundefined{stampendmark}{\let\stampendmark\kian@stampendmark}{}%
+\def\kian@dontstampendmark{%
+  \gdef\@kian@page@stampendmark{N}%
+}%
+\@ifundefined{dontstampendmark}{\let\dontstampendmark\kian@dontstampendmark}{}%
+\def\@kian@page@stampendmark{-}% デフォルトの定義
+
+% 最終ページ
+\AtEndDocument{%
+  \expandafter\ifx\@kian@page@stampendmark -%
+    \expandafter\ifx\@kian@page@Stampendmark Y%
+      \gdef\@kian@page@stampendmark{Y}%
+    \else\expandafter\ifx\@kian@page@Stampendmark N\else%
+      \gdef\@kian@page@stampendmark{N}%
+    \fi\fi%
+  \fi%
+}%
+
+%======================================%
+% ヘッダ
+
+\def\kian@head#1{%
+  \def\@kian@head{#1}%
+}%
+\kian@head{}%
+\@ifundefined{head}{\let\head\kian@head}{}%
+
+%======================================%
+% 臨時ヘッダ
+
+\def\kian@temphead#1{%
+  \def\@kian@temphead{#1}%
+}%
+\kian@temphead{}%
+\@ifundefined{temphead}{\let\temphead\kian@temphead}{}%
+\def\kian@anothersheet{\kian@temphead{{\hfill}別紙}}% 別紙
+\@ifundefined{anothersheet}{\let\anothersheet\kian@anothersheet}{}%
+
+%======================================%
+% フッタ
+
+\def\kian@foot#1{%
+  \def\@kian@foot{#1}%
+}%
+\kian@foot{%
+  % ページ番号
+  \expandafter\ifx\@kian@page@stamppagenumber Y%
+    \hss\thefootpage\hss%
+  \else\expandafter\ifx\@kian@page@stamppagenumber N%
+    \hfill%
+  \else\expandafter\ifx\@kian@page@Stamppagenumber Y%
+    \hss\thefootpage\hss%
+  \else\expandafter\ifx\@kian@page@Stamppagenumber N%
+    \hfill%
+  \fi\fi\fi\fi%
+  \gdef\@kian@stamppagenumber{-}%
+  % 終了のマーク
+  \expandafter\ifx\@kian@page@stampendmark Y%
+    \llap{\@kian@page@endmark}%
+  \fi%
+  \gdef\@kian@page@stampendmark{-}%
+}%
+\@ifundefined{foot}{\let\foot\kian@foot}{}%
+\def\thefootpage{{\thepage}}%
+
+%======================================%
+% 臨時フッタ
+
+\def\kian@tempfoot#1{%
+  \def\@kian@tempfoot{#1}%
+}%
+\kian@tempfoot{}%
+\@ifundefined{tempfoot}{\let\tempfoot\kian@tempfoot}{}%
+
+%======================================%
+% 最終ページ
+
+\def\kian@thelastpage{{%
+  \@ifundefined{r@kian@lastpage}{}{\pageref{kian@lastpage}}%
+}}%
+\@ifundefined{thelastpage}{\let\thelastpage\kian@thelastpage}{}%
+% 最終ページ番号を記録
+\AtEndDocument{%
+  \vskip-\baselineskip\leavevmode% バグ修正のため
+  \immediate\write\@auxout{\string\newlabel{kian@lastpage}{{\the\c@page}{\thepage}}}%
+}%
+
+%======================================%
+% 起案用のページスタイル
+
+\def\ps@kian@kian{%
+  % 柱文
+  %\let\@mkboth\@gobbletwo%
+  % 奇ヘッダ
+  \def\@oddhead{{\small%\footnotesize%
+    \expandafter\ifx\expandafter\relax\@kian@temphead\relax%
+      \@kian@head\else%
+      \@kian@temphead\gdef\@kian@temphead{}\fi%
+  }}%
+  %\global\let\@oddhead\@empty%
+  % 偶ヘッダ（jsarticle では奇ヘッダと同じ）
+  \def\@evenhead{\@oddhead}%
+  % 奇フッタ
+  \def\@oddfoot{{\small%\footnotesize%
+    \expandafter\ifx\expandafter\relax\@kian@tempfoot\relax%
+      \@kian@foot\else%
+      \@kian@tempfoot\gdef\@kian@tempfoot{}\fi%
+  }}%
+  % 偶フッタ
+  \def\@evenfoot{\@oddfoot}%
+}%
+\@ifundefined{ps@kian}{\let\ps@kian\ps@kian@kian}{}%
+% デフォルトの定義
+\pagestyle{kian@kian}%
+
+%======================================%
+% 1 ページに収める努力
+
+% 4回コンパイルが必要
+\def\kian@page@onepage{%
+  \@ifstar{\kian@page@onepage@A[4]}{%
+    \@ifnextchar[{\kian@page@onepage@A}{\kian@page@onepage@A[0]}}}%]
+\def\kian@page@onepage@A[#1]{{%
+  \ifnum#1>0\ifx\documentclass\@notprerr\@notprerr\fi\fi%
+  \ifx\documentclass\@notprerr\else%
+    \newread\TempFileA\openin\TempFileA=\jobname.aux\relax%
+    \ifeof\TempFileA\else\makeatletter\input{\jobname.aux}\makeatother\fi%
+  \fi%
+  \@ifundefined{r@kian@lastpage}%
+    {\@tempcnta=0}{\@tempcnta=\expandafter\@firstoftwo\r@kian@lastpage}\relax%
+  \@ifundefined{r@kian@onepage}%
+    {\@tempcntb=12}{\@tempcntb=\r@kian@onepage}\relax%
+  \ifcase\@tempcnta%
+    % 頁無し
+    \@tempcntb=12%
+  \or%
+    % 1頁
+    \ifnum\@tempcntb=10\@tempcntb=0\else%
+    \ifnum\@tempcntb=11\@tempcntb=10\else%
+    \ifnum\@tempcntb=12\@tempcntb=11\else%
+    \ifnum\@tempcntb=13\@tempcntb=3\else%
+    \ifnum\@tempcntb=14\@tempcntb=4\else%
+    \fi\fi\fi\fi\fi%
+  \else%
+    % 2頁以上
+    \ifnum\@tempcntb=10\@tempcntb=1\else%
+    \ifnum\@tempcntb=11\@tempcntb=2\else%
+    \ifnum\@tempcntb=12\@tempcntb=13\else%
+    \ifnum\@tempcntb=13\@tempcntb=14\else%
+    \ifnum\@tempcntb=14\@tempcntb=5\else%
+    \fi\fi\fi\fi\fi%
+  \fi\relax%
+  % レベルの上限を確認
+  \ifnum\@tempcntb<10\ifnum\@tempcntb>#1\@tempcntb=5\fi\fi\relax%
+  % レベルを保存
+  \xdef\@kian@onepage{\the\@tempcntb}%
+  \AtEndDocument{%
+    \immediate\write\@auxout{\string\newlabel{kian@onepage}{\@kian@onepage}}}%
+  % テストである旨の表示
+  \ifnum\@tempcntb>9\xdef\@oddfoot{\hfil--- ONEPAGE TEST ---\hfil}\fi%
+%  \ifnum\@tempcntb<10\ifnum\@tempcntb>#1\@tempcntb=5\fi\fi\relax%
+%  % レベルを保存
+%  \ifx\documentclass\@notprerr%
+%  \else%
+%    \xdef\@kian@onepage{\the\@tempcntb}%
+%    \AtBeginDocument{%
+%      \immediate\write\@auxout{\string\newlabel{kian@onepage}{\@kian@onepage}}}%
+%    % テストである旨の表示
+%    \ifnum\@tempcntb>9\AtBeginDocument{%
+%      \xdef\@oddfoot{\hfil--- ONEPAGE TEST ---\hfil}}\fi%
+%  \fi%
+  % 実行
+  \ifnum#1=0\ifnum\@tempcntb>0\ifnum\@tempcntb<5\@tempcntb=5\relax\fi\fi\fi%
+  \ifnum\@tempcntb>9\advance\@tempcntb by-10\relax\fi%
+  \ifnum\@tempcntb<5\kian@page@onepage@B{\@tempcntb}\fi%
+}}%
+\def\kian@page@onepage@B#1{{%
+  % 行間の調整
+  \ifnum#1<5%
+    \dimen0=\baselineskip\advance\dimen0 by-1.5\zh\relax%
+    \global\advance\baselineskip by\z@ minus\dimen0%
+  \fi%
+  % ページの余白の調整
+  \dimen0=12.313584truept% x = (1\zw+\kanjiskip) = 10.26132pt = 12.313584truept
+  \dimen1=17.079348truept% y = 1.5\zh = 14.23279pt = 17.079348truept
+  \ifcase#1%
+    % レベル0
+    \global\advance\textwidth by0.0\dimen0%
+    \global\advance\oddsidemargin by-0.0\dimen0%
+    \global\advance\textheight by0.0\dimen1%
+    \global\advance\topmargin by-0.0\dimen1\or%
+    % レベル1
+    \global\advance\textwidth by1.0\dimen0%
+    \global\advance\oddsidemargin by-0.5\dimen0%
+    \global\advance\textheight by1.0\dimen1%
+    \global\advance\topmargin by-0.5\dimen1%
+    \global\advance\footskip by-0.5\dimen1\or%
+    % レベル2
+    \global\advance\textwidth by2.0\dimen0%
+    \global\advance\oddsidemargin by-1.0\dimen0%
+    \global\advance\textheight by2.0\dimen1%
+    \global\advance\topmargin by-1.0\dimen1%
+    \global\advance\footskip by-1.0\dimen1\or%
+    % レベル3
+    \global\advance\textwidth by3.0\dimen0%
+    \global\advance\oddsidemargin by-1.5\dimen0%
+    \global\advance\textheight by3.0\dimen1%
+    \global\advance\topmargin by-1.5\dimen1%
+    \global\advance\footskip by-1.5\dimen1\or%
+    % レベル4
+    \global\advance\textwidth by4.0\dimen0%
+    \global\advance\oddsidemargin by-2.0\dimen0%
+    \global\advance\textheight by4.0\dimen1%
+    \global\advance\topmargin by-2.0\dimen1%
+    \global\advance\footskip by-2.0\dimen1\fi%
+}}%
+\@ifundefined{onepage}{\let\onepage\kian@page@onepage}{}%
+
+%==========================================================%
+% PDF のしおりの文字化けの防止
+
+\AtBeginDvi{\special{pdf:tounicode EUC-UCS2}}%
+
+%==========================================================%
+% 漢字とローマ字の間の空白（\inhibitxspcode` と \xspcode`）
+
+% 全角括弧の内側にも空白を入れる
+\ltjsetparameter{jaxspmode={`（,3}}%"
+%\inhibitxspcode`（=3%
+\ltjsetparameter{jaxspmode={`）,3}}%"
+%\inhibitxspcode`）=3%
+
+%==========================================================%
+% 空白
+
+%======================================%
+% 水平空白
+
+% 使用法：\kian@hspaceonkian{文字数},\kian@hspaceonkian*{文字数}
+\edef\kian@hspaceonkian{\protect\csname kian@hspaceonkian \endcsname}% TOC対策
+\expandafter\def\csname kian@hspaceonkian \endcsname{%                 TOC対策
+  \@ifstar{\kian@page@hspaceonkian@A[*]}{\kian@page@hspaceonkian@A[-]}%
+}%
+\def\kian@page@hspaceonkian@A[#1]{% #1:*|-
+  \@ifnextchar[{\kian@page@hspaceonkian@B[#1]}{\kian@page@hspaceonkian@B[#1][a]}%]
+}%
+\def\kian@page@hspaceonkian@B[#1][#2]#3{{% #1:*|- #2:-|=|+|a #3:文字数
+  \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax\dimen0=#3\dimen0\relax%
+  \ifx#2-\advance\dimen0 by-\kanjiskip\relax\else%
+  \ifx#2=\else%
+  \ifx#2+\advance\dimen0 by+\kanjiskip\relax\else%
+  \ifx#2a\ifvmode\else\advance\dimen0 by\kanjiskip\relax\fi\else% 行頭以外は\kanjiskipを追加
+  \fi\fi\fi\fi% 行頭以外は\kanjiskipを追加
+  \ifx*#1\hglue\dimen0\relax\else\hskip\dimen0\relax\fi%
+}}%
+\@ifundefined{hspaceonkian}{\let\hspaceonkian\kian@hspaceonkian}{}%
+\@ifundefined{Hsp}{\let\Hsp\kian@hspaceonkian}{}%
+
+\def~{%
+  \ifvmode\kian@hspaceonkian[=]{1}\else\nolinebreak\kian@hspaceonkian[+]{1}\fi%
+  \@ifnextchar\kian@hspaceonkian{\hskip-\kanjiskip}{%
+  \@ifnextchar~{\hskip-\kanjiskip\relax\hskip\z@\relax}{% \hskip\z@\relaxはバグ対応
+  }}%
+}%
+
+%======================================%
+% 垂直空白
+
+% 使用法：\kian@vspaceonkian{文字数},\kian@vspaceonkian*{文字数}
+\def\kian@vspaceonkian{%
+  \@ifstar{\kian@page@vspaceonkian@A[*]}{\kian@page@vspaceonkian@A[-]}%
+}%
+\def\kian@page@vspaceonkian@A[#1]#2{{% #1:「*」又は「-」 #2:文字数
+  \dimen0=#2\baselineskip\relax%
+  \ifx*#1\vglue\dimen0\else\vskip\dimen0\fi%
+}}%
+\@ifundefined{vspaceonkian}{\let\vspaceonkian\kian@vspaceonkian}{}%
+\@ifundefined{Vsp}{\let\Vsp\kian@vspaceonkian}{}%
+
+%======================================%
+% 下線水平空白
+
+% 使用法：\kian@underlinehspaceonkian[左文字列,右文字列]{文字数}
+\def\kian@underlinehspaceonkian{%
+  \@ifnextchar[{\kian@page@underlinehspaceonkian@A}{\kian@page@underlinehspaceonkian@A[]}%]
+}%
+\def\kian@page@underlinehspaceonkian@A[#1]#2{{% #1:左文字列,右文字列 #2:文字数
+  \kian@page@underlinehspaceonkian@B#1,,\@nil{#2}%
+}}%
+\def\kian@page@underlinehspaceonkian@B#1,#2,#3\@nil#4{{% #1:左文字列 #2:右文字列 #3:ゴミ #4:文字数
+  \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax\dimen0=#4\dimen0\relax\advance\dimen0 by-\kanjiskip\relax%
+  \ifvmode\else\hskip\kanjiskip\relax\fi%
+  \underline{}% 原因不明の対応のため
+  \underline{\hbox to\dimen0{%
+    \dimen1=\kanjiskip\relax\kanjiskip=\dimen1\relax\dimen2=\xkanjiskip\relax\xkanjiskip=\dimen2\relax%
+    #1\hfill#2}}%
+  \hskip\kanjiskip\relax%
+}}%
+\@ifundefined{underlinehspaceonkian}{\let\underlinehspaceonkian\kian@underlinehspaceonkian}{}%
+\@ifundefined{Uhs}{\let\Uhs\kian@underlinehspaceonkian}{}%
+
+%======================================%
+% 全角空白
+
+% 使用法：\ , \ [文字数]
+\let\kian@spaceorig\ %
+\@ifundefined{spaceorig}{\let\spaceorig\kian@spaceorig}{}%
+\def\ {%
+  \@ifnextchar[{\kian@page@@A}{\kian@page@@A[1]}%]
+}%
+\def\kian@page@@A[#1]{{%
+  \@tempcnta=1\loop{　\relax}\advance\@tempcnta by1\ifnum\@tempcnta<#1\repeat%"'　'
+}}%
+
+% 逐語（空白の間延びの補正）
+\let\kian@@verborig\@verb%
+\def\@verb{\let\ \kian@spaceorig\kian@@verborig}%
+\let\kian@@verbatimorig\@verbatim%
+\def\@verbatim{\let\ \kian@spaceorig\kian@@verbatimorig}%
+
+%======================================%
+% 補正
+
+% \\の次が\kian@hspaceonkianの場合は\kanjiskipを戻す
+\let\kian@backslashorig\\%
+\@ifundefined{backslashorig}{\let\backslashorig\kian@backslashorig}{}%
+\def\\{\@ifnextchar[{\kian@page@backslash@A}{\kian@page@backslash@A[\z@]}}%]
+\def\kian@page@backslash@A[#1]{\kian@page@backslash@B[#1]%
+  \@ifnextchar\kian@hspaceonkian{\hskip-\kanjiskip}{%
+  \@ifnextchar\kian@underlinehspaceonkian{\hskip-\kanjiskip}{%
+  \@ifnextchar~{\hglue-\kanjiskip\relax\hskip\z@\relax}{% \hskip\z@\relaxはバグ対応
+  }}}%
+}%
+\def\kian@page@backslash@B[#1]{{% #1: 長さ又は数値
+  \def\@tempfunb{N}\@tfor\@tempfuna:=#1\do{%
+    \expandafter\ifx\@tempfuna-\else\expandafter\ifx\@tempfuna+\else%
+    \expandafter\ifx\@tempfuna0\else\expandafter\ifx\@tempfuna1\else%
+    \expandafter\ifx\@tempfuna2\else\expandafter\ifx\@tempfuna3\else%
+    \expandafter\ifx\@tempfuna4\else\expandafter\ifx\@tempfuna5\else%
+    \expandafter\ifx\@tempfuna6\else\expandafter\ifx\@tempfuna7\else%
+    \expandafter\ifx\@tempfuna8\else\expandafter\ifx\@tempfuna9\else%
+    \expandafter\ifx\@tempfuna.\else\def\@tempfunb{L}%
+    \fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi%
+  }%
+  \ifx\relax#1\relax%
+    \kian@backslashorig\relax% 空の場合
+  \else%
+    \expandafter\ifx\@tempfunb L%
+      \kian@backslashorig[#1]\else% 長さの場合
+      \kian@backslashorig[#1\baselineskip]\fi% 数値の場合
+  \fi%
+}}%
+
+% \newlineの次が\kian@hspaceonkianの場合は\kanjiskipを戻す
+\let\kian@newlineorig\newline%
+\@ifundefined{newlineorig}{\let\newlineorig\kian@newlineorig}{}%
+\def\newline{\kian@newlineorig%
+  \@ifnextchar\kian@hspaceonkian{\hskip-\kanjiskip}{%
+  \@ifnextchar\kian@underlinehspaceonkian{\hskip-\kanjiskip}{%
+  \@ifnextchar~{\hglue-\kanjiskip\relax\hskip\z@\relax}{% \hskip\z@\relaxはバグ対応
+  }}}%
+}%
+
+% \noindentの次が\kian@hspaceonkianの場合は\kanjiskipを戻す
+\let\kian@noindentorig\noindent%
+\@ifundefined{noindentorig}{\let\noindentorig\kian@noindentorig}{}%
+\def\noindent{\kian@noindentorig%
+  \@ifnextchar\kian@hspaceonkian{\hskip-\kanjiskip}{%
+  \@ifnextchar\kian@underlinehspaceonkian{\hskip-\kanjiskip}{%
+  \@ifnextchar~{\hglue-\kanjiskip\relax\hskip\z@\relax}{% \hskip\z@\relaxはバグ対応
+  }}}%
+}%
+
+%==========================================================%
+% 終了
+
+\endinput%

@@ -1,0 +1,18 @@
+# LaTeX ビルド成果物
+*.aux
+*.log
+*.dvi
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+
+# コンパイル生成PDF
+*.pdf
+
+# Windows Zone Identifier（ダウンロードファイルに付くメタデータ）
+*:Zone.Identifier
+
+# OS/エディタ
+.DS_Store
+.vscode/

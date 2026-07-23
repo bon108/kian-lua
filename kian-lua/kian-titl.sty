@@ -1,0 +1,3296 @@
+% kian-titl.sty
+% Copyright (C) 2016-2021  Seiichiro HATA
+% Modified 2026 by Shinichi Noro（野呂伸一）: adapted for LuaLaTeX (luatexja).
+%
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+%\NeedsTeXFormat{pLaTeX2e}%
+\ProvidesPackage{kian-titl}[2021/09/06 v09]%
+
+%==============================================================================%
+% タイトル
+
+% 予約語
+% \senderstamp
+% \stampmark
+
+%==========================================================%
+% 臨時カウンターの準備
+
+\@ifundefined{@tempcnta}{\newcount\@tempcnta}{}%
+\@ifundefined{@tempcntb}{\newcount\@tempcntb}{}%
+\@ifundefined{@tempcntc}{\newcount\@tempcntc}{}%
+\@ifundefined{@tempcntd}{\newcount\@tempcntd}{}%
+\@ifundefined{@tempcnte}{\newcount\@tempcnte}{}%
+
+%==========================================================%
+% 共通設定
+
+%======================================%
+% 固有語
+
+% 担当
+\def\kian@charge{{%
+  {（}{担}{当}{）}%"（"担"当"）
+}}%
+
+% 元号（※ 改元時要変更）
+\def\kian@kaigenbi@A{18680125}\def\kian@gengodiff@A{1867}%
+\def\kian@kaigenbi@B{19120730}\def\kian@gengodiff@B{1911}%
+\def\kian@kaigenbi@C{19261225}\def\kian@gengodiff@C{1925}%
+\def\kian@kaigenbi@D{19890108}\def\kian@gengodiff@D{1988}%
+\def\kian@kaigenbi@E{20190501}\def\kian@gengodiff@E{2018}%
+\def\kian@kaigenbi@F{99960101}\def\kian@gengodiff@F{9996}%
+\def\kian@kaigenbi@G{99970101}\def\kian@gengodiff@G{9997}%
+\def\kian@kaigenbi@H{99980101}\def\kian@gengodiff@H{9998}%
+\def\kian@kaigenbi@I{99990101}\def\kian@gengodiff@I{9999}%
+\def\kian@gengo@A{{明}{治}}%"明"治
+\def\kian@gengo@B{{大}{正}}%"大"正
+\def\kian@gengo@C{{昭}{和}}%"昭"和
+\def\kian@gengo@D{{平}{成}}%"平"成
+\def\kian@gengo@E{{令}{和}}%"令"和
+\def\kian@gengo@F{{Ｆ}{Ｆ}}%"Ｆ"Ｆ
+\def\kian@gengo@G{{Ｇ}{Ｇ}}%"Ｇ"Ｇ
+\def\kian@gengo@H{{Ｈ}{Ｈ}}%"Ｈ"Ｈ
+\def\kian@gengo@H{{Ｉ}{Ｉ}}%"Ｉ"Ｉ
+\def\kian@gengo@char@A{M}%
+\def\kian@gengo@char@B{T}%
+\def\kian@gengo@char@C{S}%
+\def\kian@gengo@char@D{H}%
+\def\kian@gengo@char@E{R}%
+\def\kian@gengo@char@F{X}%
+\def\kian@gengo@char@G{Y}%
+\def\kian@gengo@char@H{Z}%
+
+% 丸印
+\def\kian@stampmark{{%
+  {印}%"印
+  %\hbox to1\zw{\textcircled{\hss\scriptsize{印}}}%"印
+}}%
+
+%======================================%
+% 漢字スキップ
+
+% 固定
+\def\kian@fixkanjiskips{%
+  \dimen8=\kanjiskip\relax\dimen9=\xkanjiskip\relax%
+  \kanjiskip=\dimen8\relax\xkanjiskip=\dimen9\relax%
+}%
+
+% 縮める
+\def\kian@shortenkanjiskips{%
+  \dimen8=\kanjiskip\relax\dimen9=\xkanjiskip\relax%
+  \kanjiskip=\z@ plus\dimen8\relax%
+  \xkanjiskip=.5\dimen9 plus.5\dimen9\relax%
+}%
+
+% 広げる
+\def\kian@lengthenkanjiskips{%
+  \dimen8=\kanjiskip\relax%
+  \advance\kanjiskip by\dimen8\relax%
+  \advance\xkanjiskip by\dimen8%
+}%
+
+% 無限に広げる
+\def\kian@fillkanjiskips{%
+  \advance\kanjiskip by\z@ plus1fil\relax%
+  \advance\xkanjiskip by\z@ plus1fil\relax%
+}%
+
+%==========================================================%
+% タイトルの定義
+
+%\AtBeginDocument{\vglue-\baselineskip\relax}% vspace*の行数がずれる問題
+
+\def\kian@maketitlecontents#1{\edef\@kian@titl@maketitlecontents{#1}}%
+\kian@maketitlecontents{i+++t+++d++r++s}%
+\@ifundefined{maketitlecontents}{\let\maketitlecontents\kian@maketitlecontents}{}%
+
+\def\kian@maketitle{%
+  \@ifnextchar[{\kian@titl@maketitle@A}{\kian@titl@maketitle@A[\@kian@titl@maketitlecontents]}%
+}%
+\def\kian@titl@maketitle@A[#1]{{%
+  \baselineskip=\normalbaselineskip%
+  \let\@tempfunb\relax%
+  \dimen0=\z@\relax%
+  \expandafter\@tfor\expandafter\@tempfuna\expandafter:\expandafter=#1\do{%
+    % マイナススキップ
+    \expandafter\ifx\@tempfuna -%
+      \advance\dimen0 by-.25\baselineskip\relax%
+    \fi%
+    % プラススキップ
+    \expandafter\ifx\@tempfuna +%
+      \advance\dimen0 by+.25\baselineskip\relax%
+    \fi%
+    % 事件番号
+    \expandafter\ifx\@tempfuna i%
+      \expandafter\ifx\expandafter\relax\@kian@idcode\relax\else%
+        \expandafter\kian@titl@maketitle@AA\@kian@idcode\@nil\ifnum\@kian@result=0%
+          \ifx\@tempfunb\relax\else\ifdim\dimen0=\z@\else\vglue\dimen0\relax\fi\fi%
+          \printidcode\def\@tempfunb{i}%
+        \fi%
+      \fi%
+      \dimen0=\z@\relax%
+    \fi%
+    % 標題
+    \expandafter\ifx\@tempfuna t%
+      \expandafter\ifx\expandafter\relax\@kian@title\relax\else%
+        \expandafter\kian@titl@maketitle@AA\@kian@title\@nil\ifnum\@kian@result=0%
+          \ifx\@tempfunb\relax\else\ifdim\dimen0=\z@\else\vglue\dimen0\relax\fi\fi%
+          \printtitle\def\@tempfunb{t}%
+        \fi%
+      \fi%
+      \dimen0=\z@\relax%
+    \fi%
+    % 日付
+    \expandafter\ifx\@tempfuna d%
+      \expandafter\ifx\expandafter\relax\@kian@date\relax\else%
+        \expandafter\kian@titl@maketitle@AA\@kian@date\@nil\ifnum\@kian@result=0%
+          \ifx\@tempfunb\relax\else\ifdim\dimen0=\z@\else\vglue\dimen0\relax\fi\fi%
+          \printdate\def\@tempfunb{d}%
+        \fi%
+      \fi%
+      \dimen0=\z@\relax%
+    \fi%
+    % 受信人
+    \expandafter\ifx\@tempfuna r%
+      \expandafter\ifx\expandafter\relax\@kian@receiver\relax\else%
+        \expandafter\kian@titl@maketitle@AA\@kian@receiver\@nil\ifnum\@kian@result=0%
+          \ifx\@tempfunb\relax\else\ifdim\dimen0=\z@\else\vglue\dimen0\relax\fi\fi%
+          \printreceiver\def\@tempfunb{r}%
+        \fi%
+      \fi%
+      \dimen0=\z@\relax%
+    \fi%
+    % 発信人
+    \expandafter\ifx\@tempfuna s%
+      \expandafter\ifx\expandafter\relax\@kian@sender\relax\else%
+        \expandafter\kian@titl@maketitle@AA\@kian@sender\@nil\ifnum\@kian@result=0%
+          \ifx\@tempfunb\relax\else\ifdim\dimen0=\z@\else\vglue\dimen0\relax\fi\fi%
+          \printsender\def\@tempfunb{s}%
+        \fi%
+      \fi%
+      \dimen0=\z@\relax%
+    \fi%
+    % 当事者
+    % 備考
+  }%
+  % 最後の調整
+  \if@titlepage\newpage\fi%
+}}%
+\def\kian@titl@maketitle@AA{%
+  \xdef\@kian@result{-1}%
+  \kian@titl@maketitle@AB%
+}%
+\def\kian@titl@maketitle@AB{%
+  \@ifnextchar[{\kian@titl@maketitle@AC}{\kian@titl@maketitle@AC[]}%]
+}%
+\def\kian@titl@maketitle@AC[#1]#2#3\@nil{{%
+  \setbox2=\hbox{\def\\{\def\@tempfuna[####1]{}\@ifnextchar[{\@tempfuna}{\@tempfuna[]}}\@ifnextchar\@nil{}{}#2}%]
+  \setbox3=\hbox{\def\\{\def\@tempfuna[####1]{}\@ifnextchar[{\@tempfuna}{\@tempfuna[]}}\@ifnextchar\@nil{}{}#3}%]
+  \ifdim\wd2>\z@\xdef\@kian@result{0}\fi%
+  \ifdim\wd3>\z@\kian@titl@maketitle@AB#3\relax\@nil\fi% "\relax"はエラー防止のため
+}}%
+\let\maketitleorig\maketitle%
+\let\maketitle\kian@maketitle%
+
+%==========================================================%
+% タイトルの各項目の設定
+
+%======================================%
+% 関数の設定
+
+\def\kian@titl@prepareetc#1#2#3#4#5{% #1:項目名 #2:短縮形 #3:横の長さの数 #4:縦の長さの数 #5:オプション名
+  % \kian@etc
+  \expandafter\def\csname kian@#1\endcsname{%
+    \@ifnextchar[{\csname kian@#1@A\endcsname}{\csname kian@#1@A\endcsname[]}%]
+  }%
+  \expandafter\edef\csname kian@#1@A\endcsname[##1]##2{% ##1:オプション ##2:データ
+    \expandafter\def\csname @kian@#1\endcsname{[##1]{##2}}%
+  }%
+  % \etc
+  \@ifundefined{#1}{%
+    \expandafter\let\expandafter\@tempfuna\csname kian@#1\endcsname%
+    \expandafter\let\csname #1\endcsname\@tempfuna%
+  }{}%
+  % \Etc
+  \@ifundefined{#2}{%
+    \expandafter\let\expandafter\@tempfuna\csname kian@#1\endcsname%
+    \expandafter\let\csname #2\endcsname\@tempfuna%
+  }{}%
+  % \@kian@etc
+  \expandafter\def\csname @kian@#1\endcsname{}%
+  % \@etc
+  \@ifundefined{@#1}{%
+    \expandafter\def\csname @#1\endcsname{\csname @kian@#1\endcsname}%
+  }{}%
+  % \kian@etcs
+  \expandafter\def\csname kian@#1s\endcsname##1{% ##1:[オプション]データ*x
+    \expandafter\def\csname @kian@#1\endcsname{##1}%
+  }%
+  % \etcs
+  \@ifundefined{#1s}{%
+    \expandafter\let\expandafter\@tempfuna\csname kian@#1s\endcsname%
+    \expandafter\let\csname #1s\endcsname\@tempfuna%
+  }{}%
+  % \Etcs
+  \@ifundefined{#2s}{%
+    \expandafter\let\expandafter\@tempfuna\csname kian@#1s\endcsname%
+    \expandafter\let\csname #2s\endcsname\@tempfuna%
+  }{}%
+  % \@kian@etcs
+  \expandafter\def\csname @kian@#1s\endcsname{\csname @kian@#1\endcsname}%
+  % \@etcs
+  \@ifundefined{@#1s}{%
+    \expandafter\def\csname @#1s\endcsname{\csname @kian@#1\endcsname}%
+  }{}%
+  % \kian@printetc
+  \expandafter\def\csname kian@print#1\endcsname{%
+    \kian@titl@printetcalldata{#1}%
+  }%
+  % \printetc
+  \@ifundefined{print#1}{%
+    \expandafter\let\expandafter\@tempfuna\csname kian@print#1\endcsname%
+    \expandafter\let\csname print#1\endcsname\@tempfuna%
+  }{}%
+  % \kian@printetcs
+  \@ifundefined{kian@print#1s}{%
+    \expandafter\let\expandafter\@tempfuna\csname kian@print#1\endcsname%
+    \expandafter\let\csname kian@print#1s\endcsname\@tempfuna%
+  }{}%
+  % \printetcs
+  \@ifundefined{print#1s}{%
+    \expandafter\let\expandafter\@tempfuna\csname kian@print#1\endcsname%
+    \expandafter\let\csname print#1s\endcsname\@tempfuna%
+  }{}%
+  % \kian@etchlength
+  \expandafter\def\csname kian@#1hlengthcore\endcsname##1##2##3##4##5##6##7##8##9{%
+    \ifx\relax##1\relax\else\expandafter\def\csname @kian@titl@#1hlengthA\endcsname{##1}\fi%
+    \ifx\relax##2\relax\else\expandafter\def\csname @kian@titl@#1hlengthB\endcsname{##2}\fi%
+    \ifx\relax##3\relax\else\expandafter\def\csname @kian@titl@#1hlengthC\endcsname{##3}\fi%
+    \ifx\relax##4\relax\else\expandafter\def\csname @kian@titl@#1hlengthD\endcsname{##4}\fi%
+    \ifx\relax##5\relax\else\expandafter\def\csname @kian@titl@#1hlengthE\endcsname{##5}\fi%
+    \ifx\relax##6\relax\else\expandafter\def\csname @kian@titl@#1hlengthF\endcsname{##6}\fi%
+    \ifx\relax##7\relax\else\expandafter\def\csname @kian@titl@#1hlengthG\endcsname{##7}\fi%
+    \ifx\relax##8\relax\else\expandafter\def\csname @kian@titl@#1hlengthH\endcsname{##8}\fi%
+    \ifx\relax##9\relax\else\expandafter\def\csname @kian@titl@#1hlengthI\endcsname{##9}\fi}%
+  \ifcase#3\or%
+    \expandafter\def\csname kian@#1hlength\endcsname##1{%
+      \csname kian@#1hlengthcore\endcsname{##1}{}{}{}{}{}{}{}{}}\or%
+    \expandafter\def\csname kian@#1hlength\endcsname##1##2{%
+      \csname kian@#1hlengthcore\endcsname{##1}{##2}{}{}{}{}{}{}{}}\or%
+    \expandafter\def\csname kian@#1hlength\endcsname##1##2##3{%
+      \csname kian@#1hlengthcore\endcsname{##1}{##2}{##3}{}{}{}{}{}{}}\or%
+    \expandafter\def\csname kian@#1hlength\endcsname##1##2##3##4{%
+      \csname kian@#1hlengthcore\endcsname{##1}{##2}{##3}{##4}{}{}{}{}{}}\or%
+    \expandafter\def\csname kian@#1hlength\endcsname##1##2##3##4##5{%
+      \csname kian@#1hlengthcore\endcsname{##1}{##2}{##3}{##4}{##5}{}{}{}{}}\or%
+    \expandafter\def\csname kian@#1hlength\endcsname##1##2##3##4##5##6{%
+      \csname kian@#1hlengthcore\endcsname{##1}{##2}{##3}{##4}{##5}{##6}{}{}{}}\or%
+    \expandafter\def\csname kian@#1hlength\endcsname##1##2##3##4##5##6##7{%
+      \csname kian@#1hlengthcore\endcsname{##1}{##2}{##3}{##4}{##5}{##6}{##7}{}{}}\or%
+    \expandafter\def\csname kian@#1hlength\endcsname##1##2##3##4##5##6##7##8{%
+      \csname kian@#1hlengthcore\endcsname{##1}{##2}{##3}{##4}{##5}{##6}{##7}{##8}{}}\or%
+    \expandafter\def\csname kian@#1hlength\endcsname##1##2##3##4##5##6##7##8##9{%
+      \csname kian@#1hlengthcore\endcsname{##1}{##2}{##3}{##4}{##5}{##6}{##7}{##8}{##9}}\fi%
+  % \etchlength
+  \@ifundefined{#1hlength}{%
+    \expandafter\let\expandafter\@tempfuna\csname kian@#1hlength\endcsname%
+    \expandafter\let\csname #1hlength\endcsname\@tempfuna%
+  }{}%
+  % \kian@etchvength
+  \expandafter\edef\csname kian@#1vlengthcore\endcsname##1##2##3##4##5##6##7##8##9{%
+    \ifx\relax##1\relax\else\expandafter\def\csname @kian@titl@#1vlengthA\endcsname{##1}\fi%
+    \ifx\relax##2\relax\else\expandafter\def\csname @kian@titl@#1vlengthB\endcsname{##2}\fi%
+    \ifx\relax##3\relax\else\expandafter\def\csname @kian@titl@#1vlengthC\endcsname{##3}\fi%
+    \ifx\relax##4\relax\else\expandafter\def\csname @kian@titl@#1vlengthD\endcsname{##4}\fi%
+    \ifx\relax##5\relax\else\expandafter\def\csname @kian@titl@#1vlengthE\endcsname{##5}\fi%
+    \ifx\relax##6\relax\else\expandafter\def\csname @kian@titl@#1vlengthF\endcsname{##6}\fi%
+    \ifx\relax##7\relax\else\expandafter\def\csname @kian@titl@#1vlengthG\endcsname{##7}\fi%
+    \ifx\relax##8\relax\else\expandafter\def\csname @kian@titl@#1vlengthH\endcsname{##8}\fi%
+    \ifx\relax##9\relax\else\expandafter\def\csname @kian@titl@#1vlengthI\endcsname{##9}\fi}%
+  \ifcase#4\or%
+    \expandafter\edef\csname kian@#1vlength\endcsname##1{%
+      \csname kian@#1vlengthcore\endcsname{##1}{}{}{}{}{}{}{}{}}\or%
+    \expandafter\edef\csname kian@#1vlength\endcsname##1##2{%
+      \csname kian@#1vlengthcore\endcsname{##1}{##2}{}{}{}{}{}{}{}}\or%
+    \expandafter\edef\csname kian@#1vlength\endcsname##1##2##3{%
+      \csname kian@#1vlengthcore\endcsname{##1}{##2}{##3}{}{}{}{}{}{}}\or%
+    \expandafter\edef\csname kian@#1vlength\endcsname##1##2##3##4{%
+      \csname kian@#1vlengthcore\endcsname{##1}{##2}{##3}{##4}{}{}{}{}{}}\or%
+    \expandafter\edef\csname kian@#1vlength\endcsname##1##2##3##4##5{%
+      \csname kian@#1vlengthcore\endcsname{##1}{##2}{##3}{##4}{##5}{}{}{}{}}\or%
+    \expandafter\edef\csname kian@#1vlength\endcsname##1##2##3##4##5##6{%
+      \csname kian@#1vlengthcore\endcsname{##1}{##2}{##3}{##4}{##5}{##6}{}{}{}}\or%
+    \expandafter\edef\csname kian@#1vlength\endcsname##1##2##3##4##5##6##7{%
+      \csname kian@#1vlengthcore\endcsname{##1}{##2}{##3}{##4}{##5}{##6}{##7}{}{}}\or%
+    \expandafter\edef\csname kian@#1vlength\endcsname##1##2##3##4##5##6##7##8{%
+      \csname kian@#1vlengthcore\endcsname{##1}{##2}{##3}{##4}{##5}{##6}{##7}{##8}{}}\or%
+    \expandafter\edef\csname kian@#1vlength\endcsname##1##2##3##4##5##6##7##8##9{%
+      \csname kian@#1vlengthcore\endcsname{##1}{##2}{##3}{##4}{##5}{##6}{##7}{##8}{##9}}\fi%
+  % \etcvlength
+  \@ifundefined{#1vlength}{%
+    \expandafter\let\expandafter\@tempfuna\csname kian@#1vlength\endcsname%
+    \expandafter\let\csname #1vlength\endcsname\@tempfuna%
+  }{}%
+  % \kian@etcoptionhage
+  \@for\@tempfuna:=#5\do{%
+    \expandafter\edef\csname kian@#1option\@tempfuna\endcsname##1{%
+      \expandafter\xdef\csname @kian@#1option\@tempfuna\endcsname{##1}%
+    }%
+  }%
+  % \etcoptionhage
+  \@for\@tempfuna:=#5\do{%
+    \@ifundefined{#1option\@tempfuna}{%
+      \expandafter\let\expandafter\@tempfunb\csname kian@#1option\@tempfuna\endcsname%
+      \expandafter\let\csname #1option\@tempfuna\endcsname\@tempfunb%
+    }{}%
+  }%
+  % \@kian@etcoptionhage
+  \@for\@tempfuna:=#5\do{%
+    \expandafter\def\csname @kian@#1option\@tempfuna\endcsname{}%
+  }%
+  % @etcoptionhage
+  \@for\@tempfuna:=#5\do{%
+    \@ifundefined{@#1option\@tempfuna}{%
+      \def\@tempfunb##1\@nil{%
+        \expandafter\def\csname @#1option##1\endcsname{%
+          \csname @kian@#1option##1\endcsname%
+        }%
+      }%
+    }{}%
+    \expandafter\@tempfunb\@tempfuna\@nil%
+  }%
+}%
+
+%======================================%
+% 表示する関数
+
+% 全データを表示
+\def\kian@titl@printetcalldata#1{% #1:etc
+  \xdef\@kian@titl@markerfirstdata{Y}%
+  \expandafter\let\expandafter\@tempfuna\csname @kian@#1\endcsname%
+  \expandafter\kian@titl@printetcalldata@A\@tempfuna\relax\@nil{#1}%
+}%
+\def\kian@titl@printetcalldata@A{%
+  \@ifnextchar[{\kian@titl@printetcalldata@B}{\kian@titl@printetcalldata@B[]}%]
+}%
+\def\kian@titl@printetcalldata@B[#1]#2#3\@nil#4{{% #1:オプション #2:各データ #3:残各データ #4:etc
+  % 残りを確認
+  \def\@tempfuna{#3}\def\@tempfunb{ }\ifx\@tempfuna\@tempfunb\else%
+    % 改行でない場合
+    \ifx\relax#3\relax%
+      % 残各データ
+      \xdef\@kian@titl@markerlastdata{Y}\else%
+      \xdef\@kian@titl@markerlastdata{N}\fi%
+  \fi%
+  % 各データに小分けして表示
+  \ifx\relax#1#2\relax\else%
+    \kian@titl@printetceachdata{#2}[#1]{#4}%
+  \fi%
+  % 再帰呼出し
+  \expandafter\ifx\@kian@titl@markerlastdata N%
+    \xdef\@kian@titl@markerfirstdata{N}%
+    \kian@titl@printetcalldata@A#3\@nil{#4}% 再帰呼び出し
+  \fi%
+}}%
+
+% 各データを表示
+\def\kian@titl@printetceachdata#1[#2]#3{{% #1:各データ #2:オプション #3:etc
+  %\csname kian@titl@#3applydefaultoption\endcsname% オプションのデフォルト設定
+  % オプション解析
+  \edef\@tempfunb{}%
+  \@tfor\@tempfuna:=#2,\do{% カンマは最後に数字のオプションを吐き出すため
+    \expandafter\ifx\expandafter\relax\@tempfuna\relax\else%
+      % 数字のオプションはまとめて後で吐き出す
+      \expandafter\ifx\@tempfuna-\edef\@tempfunb{\@tempfunb-}\else%
+      \expandafter\ifx\@tempfuna+\edef\@tempfunb{\@tempfunb+}\else%
+      \expandafter\ifx\@tempfuna0\edef\@tempfunb{\@tempfunb0}\else%
+      \expandafter\ifx\@tempfuna1\edef\@tempfunb{\@tempfunb1}\else%
+      \expandafter\ifx\@tempfuna2\edef\@tempfunb{\@tempfunb2}\else%
+      \expandafter\ifx\@tempfuna3\edef\@tempfunb{\@tempfunb3}\else%
+      \expandafter\ifx\@tempfuna4\edef\@tempfunb{\@tempfunb4}\else%
+      \expandafter\ifx\@tempfuna5\edef\@tempfunb{\@tempfunb5}\else%
+      \expandafter\ifx\@tempfuna6\edef\@tempfunb{\@tempfunb6}\else%
+      \expandafter\ifx\@tempfuna7\edef\@tempfunb{\@tempfunb7}\else%
+      \expandafter\ifx\@tempfuna8\edef\@tempfunb{\@tempfunb8}\else%
+      \expandafter\ifx\@tempfuna9\edef\@tempfunb{\@tempfunb9}\else%
+      \expandafter\ifx\@tempfuna.\edef\@tempfunb{\@tempfunb.}\else%
+      \expandafter\ifx\expandafter\relax\@tempfunb\relax\else%
+        \csname kian@titl@#3applyoption\endcsname{\@tempfunb}\edef\@tempfunb{}% \kian@titl@etcapplyoption{number}
+      \fi%
+      \expandafter\ifx\@tempfuna,\else% カンマはパス
+      \csname kian@titl@#3applyoption\endcsname{\@tempfuna}% \kian@titl@etcapplyoption{character}
+      \fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi%
+    \fi%
+  }%
+  % 各データのデータ解析
+  \csname kian@titl@#3analyzeeachdata\endcsname{#1}% \kian@titl@etcanalyzeeachdata
+  % 表示
+  \xdef\@kian@titl@markerfirstline{Y}%
+  \ifx\relax#1\relax%
+    \kian@titl@printetceachdata@A\\\@nil[#2]{#3}\else% 行毎に分離（各データが空の場合）
+    \expandafter\kian@titl@printetceachdata@A{#1}\\\@nil[#2]{#3}\fi% 行毎に分離
+    %\expandafter\kian@titl@printetceachdata@A#1\\\@nil[#2]{#3}\fi% 行毎に分離
+  % 字下げをクリア
+  \global\leftskip=\z@%
+}}%
+\def\kian@titl@printetceachdata@A#1\\#2\@nil[#3]#4{{% #1:行データ #2:残行データ #3:オプション #4:etc
+  \@ifnextchar[{\kian@titl@printetceachdata@B}{\kian@titl@printetceachdata@B[\z@]}#1\\#2\@nil[#3]{#4}%]
+}}%
+\def\kian@titl@printetceachdata@B[#1]#2\\#3\@nil[#4]#5{{% #1:改行幅 #2:行データ #3:残行データ #4:オプション #5:etc
+  % 残りを確認
+  \setbox0=\hbox{\def\\{\def\@tempfuna[####1]{}\@ifnextchar[{\@tempfuna}{\@tempfuna[]}}\\#3}%] "\\"はエラー防止のため
+  \ifdim\wd0=\z@%
+    \xdef\@kian@titl@markerlastline{Y}\else%
+    \xdef\@kian@titl@markerlastline{N}\fi%
+  % 改行幅
+  \def\@tempfunb{N}\@tfor\@tempfuna:=#1\do{%
+    \expandafter\ifx\@tempfuna-\else\expandafter\ifx\@tempfuna+\else%
+    \expandafter\ifx\@tempfuna0\else\expandafter\ifx\@tempfuna1\else%
+    \expandafter\ifx\@tempfuna2\else\expandafter\ifx\@tempfuna3\else%
+    \expandafter\ifx\@tempfuna4\else\expandafter\ifx\@tempfuna5\else%
+    \expandafter\ifx\@tempfuna6\else\expandafter\ifx\@tempfuna7\else%
+    \expandafter\ifx\@tempfuna8\else\expandafter\ifx\@tempfuna9\else%
+    \expandafter\ifx\@tempfuna.\else\def\@tempfunb{L}%
+    \fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi%
+  }%
+  \ifx\relax#1\relax\else%
+    \expandafter\ifx\@tempfunb L%
+      \ifdim#1=\z@\else\vskip#1\relax\fi\else% 長さの場合
+      \ifnum#1=0\else\vskip#1\baselineskip\relax\fi\fi% 数値の場合
+  \fi%
+  % 各行に小分けして表示
+  \ifx\relax#4#2\relax\else%
+    \expandafter\kian@titl@printetceachline#2===\@nil{#5}%
+    %\expandafter\kian@titl@printetceachline#2===\@nil{#5}%
+  \fi%
+  % 再帰呼出し
+  \expandafter\ifx\@kian@titl@markerlastline N%
+    \expandafter\ifx\xdef\@kian@titl@markerfirstline y%
+      \xdef\@kian@titl@markerfirstline{Y}% 初行でコマンド行だった場合
+    \else%
+      \xdef\@kian@titl@markerfirstline{N}%
+    \fi%
+    \kian@titl@printetceachdata@A#3\\\@nil[#4]{#5}%
+  \fi%
+}}%
+
+% 各行を表示
+\def\kian@titl@printetceachline#1=#2=#3=#4\@nil#5{% #1:行タイプ|行データ #2:行データ|空 #3:空 #4:ゴミ #5:etc
+%\def\kian@titl@printetceachline#1=#2=#3=#4\@nil#5{% #1:行タイプ|行データ #2:行データ|空 #3:空 #4:ゴミ #5:etc
+  \ifx\relax#3\relax\else%
+    \errmessage{Package kian-titl Error: If you use "=" in "#5", Put it in parentheses}%
+  \fi%
+  \def\@tempfuna{X}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@printetceachline@A{#2}% コマンド行
+  \else\def\@tempfuna{ X}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@printetceachline@A{#2}% コマンド行
+  \else%
+    % 表示後に改行
+    \begingroup%
+    \xdef\@kian@titl@linebreak{Y}%
+    % 表示
+    \ifx\relax#4\relax% #4は"="又は""
+      \kian@titl@printetceachline@C{}#1:::\@nil{#5}\else% 行データタイプがない場合
+      \kian@titl@printetceachline@C{#1}#2:::\@nil{#5}\fi% 行データタイプがある場合
+    \endgroup%
+    %\kian@titl@printetceachline@B{#1}{#2}{#5}% 通常行
+  \fi\fi%
+}%
+\def\kian@titl@printetceachline@A#1{% #1:コマンド
+  \setbox0=\hbox{#1}\ifdim\wd0=\z@#1\else#1\endgraf\fi% コマンド行
+  \expandafter\ifx\@kian@titl@markerfirstline Y\xdef\@kian@titl@markerfirstline{y}\fi% 初行の場合
+}%
+%\def\kian@titl@printetceachline@B#1#2#3{{% #1:行タイプ|行データ #2:行データ|空 #3:etc
+%  % 表示後に改行
+%  \xdef\@kian@titl@linebreak{Y}%
+%  % 表示
+%  \ifx\relax#2\relax%
+%    \kian@titl@printetceachline@C{}#1:::\@nil{#3}\else% 行データタイプがない場合
+%    \kian@titl@printetceachline@C{#1}#2:::\@nil{#3}\fi% 行データタイプがある場合
+%}}%
+\def\kian@titl@printetceachline@C#1#2:#3:#4:#5\@nil#6{{% #1:行タイプ #2:行部分1 #3:行部分2 #4:行部分3 #5:ゴミ #6:etc
+  % 前行データタイプの保持
+  \expandafter\ifx\@kian@titl@markerfirstline Y%
+    % 1行目の場合
+    \xdef\@kian@titl@markeroldlinetype{X}\else%
+    % 2行目以下の場合
+    \xdef\@kian@titl@markeroldlinetype{\@kian@titl@markercurlinetype}\fi%
+  \ifx\relax#1\relax%
+    % 行データタイプがない場合
+    \csname kian@titl@#6checklinetype\endcsname{#2}{#3}{#4}\else% \kian@titl@etcchecklinetype
+    % 行データタイプがある場合
+    \@tfor\@tempfuna:=#1\do{\xdef\@kian@titl@markercurlinetype{\@tempfuna}}\fi% \@tforは改行除外のため
+  % インデントを停止
+  \noindent%
+  % 行データを表示
+  \csname kian@titl@#6printeachline\endcsname{#2}{#3}{#4}% \kian@titl@etcprinteachline
+  % 改行と改段落
+  \expandafter\ifx\@kian@titl@markerlastline Y%
+    \expandafter\ifx\@kian@titl@markerlastdata Y%
+      % 全データの改段落
+      \begingroup%
+        \dimen0=\csname @kian@titl@#6vlengthA\endcsname\baselineskip\relax%
+        \advance\dimen0 by-\baselineskip\relax%
+        \par\vskip\dimen0\relax%
+      \endgroup%
+    \else%
+      % 各データの改段落
+      \begingroup%
+        \dimen0=\csname @kian@titl@#6vlengthB\endcsname\baselineskip\relax%
+        \advance\dimen0 by-\baselineskip\relax%
+        \par\vskip\dimen0\relax%
+      \endgroup%
+    \fi%
+  \else%
+    \expandafter\ifx\@kian@titl@linebreak Y%
+      % 各行の改行
+      \begingroup%
+        \dimen0=\csname @kian@titl@#6vlengthC\endcsname\baselineskip\relax%
+        \advance\dimen0 by-\baselineskip\relax%
+        \par\vskip\dimen0\relax%
+      \endgroup%
+    \fi%
+  \fi%
+}}%
+
+%======================================%
+% ブランクの場合の調整改行幅
+
+\def\kian@blankvskip#1{%
+  \def\@kian@titl@blankvskip{#1}%
+}%
+\kian@blankvskip{.5}%
+\@ifundefined{blankvskip}{\let\blankvskip\kian@blankvskip}{}%
+
+%==========================================================%
+% 事件番号
+
+%======================================%
+% 設定
+
+% 基本
+\kian@titl@prepareetc{idcode}{Idc}{9}{3}{column,location}%
+
+% 横の幅
+\kian@idcodehlength%
+   {0}% 全体の字下げ
+   {0}% 全体の2行目以下の字下げ
+   {0}% 行データの2行目以下の字下げ
+  {-1}% 事件番号（狭義）の幅（-1:そのままの幅）
+   {1}% 事件番号（狭義）と事件名の間の幅
+  {-2}% 肩書きの幅（-1:そのままの幅 -2:最大幅 -3:3文字以上最大幅）
+   {1}% 肩書きと名前の間の幅
+   {7}% 名前の幅
+   {1}% 名前と外何名の間の幅
+\def\kian@titl@applyidcodehlength#1#2#3{%
+  \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax%
+  \dimen1=\@kian@titl@idcodehlengthA\dimen0\relax%
+  \expandafter\ifx\@kian@titl@markerfirstline Y%
+    \dimen2=\z@\relax\else%
+    \dimen2=\@kian@titl@idcodehlengthB\dimen0\relax\fi%
+  \dimen3=\@kian@titl@idcodehlengthC\dimen0\relax%
+  \ifdim\@kian@titl@idcodehlengthD pt<\z@%
+    \setbox0=\hbox{#1}\dimen4=\wd0\relax\else%
+    \dimen4=\@kian@titl@idcodehlengthD\dimen0\relax\advance\dimen4 by-\kanjiskip\relax\fi%
+  \dimen5=\@kian@titl@idcodehlengthE\dimen0\relax\advance\dimen5 by+\kanjiskip\relax%
+  \setbox0=\expandafter\hbox\expandafter{%
+    \expandafter\@ifnextchar\expandafter\@nil\expandafter{\expandafter}\expandafter{\expandafter}#2}%
+  \ifdim\@kian@titl@idcodehlengthF pt<\z@%
+    \dimen6=\wd0\relax%
+    \ifdim\@kian@titl@idcodehlengthF pt=-3pt%
+      \dimen6=3\dimen0\relax\advance\dimen6 by-\kanjiskip\relax%
+      \ifdim\dimen6<\wd0\dimen6=\wd0\relax\fi%
+    \fi%
+  \else%
+    \dimen6=\@kian@titl@idcodehlengthF\dimen0\relax\advance\dimen6 by-\kanjiskip\relax%
+    \ifdim\dimen6<\wd0\dimen6=\wd0\relax\fi%
+  \fi%
+  \dimen7=\@kian@titl@idcodehlengthG\dimen0\relax\advance\dimen7 by+\kanjiskip\relax%
+  \dimen8=\@kian@titl@idcodehlengthH\dimen0\relax\advance\dimen8 by-\kanjiskip\relax%
+  \dimen9=\@kian@titl@idcodehlengthI\dimen0\relax\advance\dimen9 by+\kanjiskip\relax%
+  \leftskip=\z@\relax%
+  \@for\@tempfuna:=#3\do{%
+    \ifcase\@tempfuna\or%
+      \advance\leftskip by\dimen1\relax\or%
+      \advance\leftskip by\dimen2\relax\or%
+      \advance\leftskip by\dimen3\relax\or%
+      \advance\leftskip by\dimen4\relax\or%
+      \advance\leftskip by\dimen5\relax\or%
+      \advance\leftskip by\dimen6\relax\or%
+      \advance\leftskip by\dimen7\relax\or%
+      \advance\leftskip by\dimen8\relax\or%
+      \advance\leftskip by\dimen9\relax\fi%
+  }%
+  \global\leftskip=\leftskip%
+  \expandafter\ifx\@kian@titl@idcodelocationcenter N%
+    \hskip-\leftskip\relax% 行頭へ移動
+    \hskip\dimen1\relax%
+    \hskip\dimen2\relax%
+  \fi%
+}%
+
+% 縦の幅
+\kian@idcodevlength%
+   {1}% 全データの改段落の幅
+   {1}% 各データの改段落の幅
+   {1}% 各行の改行の幅
+
+%======================================%
+% 関数
+
+% オプションのデフォルト設定
+\def\kian@titl@idcodeapplydefaultoption{{%
+  \kian@idcodeoptioncolumn{o}% 当事者の段組（o:1段/t:2段）
+  \kian@idcodeoptionlocation{l}% 位置（l:左/c:中央/r:右）
+  %\kian@idcodeoptionwidthofstatus{}% 肩書の幅
+}}%
+\kian@titl@idcodeapplydefaultoption%
+
+% 各データのオプション解析
+\def\kian@titl@idcodeapplyoption#1{{% #1:オプション
+  \expandafter\ifx\expandafter l#1\kian@idcodeoptionlocation{l}\else% 表示左
+  \expandafter\ifx\expandafter c#1\kian@idcodeoptionlocation{c}\else% 表示中央
+  \expandafter\ifx\expandafter r#1\kian@idcodeoptionlocation{r}\else% 表示右
+  \expandafter\ifx\expandafter o#1\kian@idcodeoptioncolumn{o}\else% 当事者の1段組
+  \expandafter\ifx\expandafter t#1\kian@idcodeoptioncolumn{t}\else% 当事者の2段組
+  \xdef\@kian@titl@idcodehlengthF{#1}% 肩書の幅
+  \fi\fi\fi\fi\fi%
+}}%
+
+% 各データのデータ解析（最良肩書を記録）
+\def\kian@titl@idcodeanalyzeeachdata#1{{% #1:各データ
+  \xdef\kian@titl@idcodelongestposition{}%
+  \kian@titl@idcodeanalyzeeachdata@A#1\\\@nil% 行毎に分離
+}}%
+\def\kian@titl@idcodeanalyzeeachdata@A#1\\#2\@nil{{% #1:行データ #2:残行データ
+  \@ifnextchar[{\kian@titl@idcodeanalyzeeachdata@B}{\kian@titl@idcodeanalyzeeachdata@B[\z@]}#1\\#2\@nil%]
+}}%
+\def\kian@titl@idcodeanalyzeeachdata@B[#1]#2\\#3\@nil{{% #1:改行幅 #2:行データ #3:残行データ
+  % 残りを確認
+  \setbox0=\hbox{\def\\{\def\@tempfuna[####1]{}\@ifnextchar[{\@tempfuna}{\@tempfuna[]}}\\#3}%] "\\"はエラー防止のため
+  \ifdim\wd0=\z@%
+    \xdef\@kian@titl@markerlastline{Y}\else%
+    \xdef\@kian@titl@markerlastline{N}\fi%
+  % 各行に小分けして分析
+  \ifx\relax#2\relax\else%
+    \kian@titl@idcodeanalyzeeachdata@C#2==\@nil%
+  \fi%
+  % 再帰呼出し
+  \expandafter\ifx\@kian@titl@markerlastline N%
+    \xdef\@kian@titl@markerfirstline{N}%
+    \kian@titl@idcodeanalyzeeachdata@A#3\\\@nil%
+  \fi%
+}}%
+\def\kian@titl@idcodeanalyzeeachdata@C#1=#2=#3\@nil{{% #1:行タイプ|行データ #2:行データ|空 #3:ゴミ
+  \ifx\relax#2\relax%
+    \kian@titl@idcodeanalyzeeachdata@D{}#1:::\@nil\else% 行データタープがない場合
+    \kian@titl@idcodeanalyzeeachdata@D{#1}#2:::\@nil\fi% 行データタープがある場合
+}}%
+\def\kian@titl@idcodeanalyzeeachdata@D#1#2:#3:#4:#5\@nil{{% #1:行タイプ #2:行部分1 #3:行部分2 #4:行部分3 #5:ゴミ
+  % 行データタープの判定
+  \ifx\relax#1\relax%
+    % 行データタイプがない場合
+    \kian@titl@idcodechecklinetype{#2}{#3}{#4}\else%
+    % 行データタイプがある場合
+    \xdef\@kian@titl@markercurlinetype{#1}\fi%
+  % 最良肩書を記録
+  \edef\@tempfuna{\@kian@titl@markercurlinetype}\edef\@tempfunb{N}\edef\@tempfunc{ N}%
+  \ifx\@tempfuna\@tempfunb%
+    \setbox0=\hbox{\@ifnextchar\@nil{}{}\kian@titl@idcodelongestposition}%
+    \setbox1=\hbox{\@ifnextchar\@nil{}{}#2}%
+    \ifdim\wd1>\wd0\xdef\kian@titl@idcodelongestposition{#2}\fi%
+  \else\ifx\@tempfuna\@tempfunc%
+    \setbox0=\hbox{\@ifnextchar\@nil{}{}\kian@titl@idcodelongestposition}%
+    \setbox1=\hbox{\@ifnextchar\@nil{}{}#2}%
+    \ifdim\wd1>\wd0\xdef\kian@titl@idcodelongestposition{#2}\fi%
+  \fi\fi%
+}}%
+
+% 行データのタイプ解析
+\def\kian@titl@idcodechecklinetype#1#2#3{{% #1:行部分1 #2:行部分2 #3:行部分3
+  \let\@kian@titl@markercurlinetype\relax%
+  \kian@titl@idcodechecklinetype@A{#1}{被告人}{N}%
+  \kian@titl@idcodechecklinetype@A{#1}{弁護人}{N}%
+  \kian@titl@idcodechecklinetype@A{#1}{原告}{N}%
+  \kian@titl@idcodechecklinetype@A{#1}{被告}{N}%
+  \kian@titl@idcodechecklinetype@A{#1}{控訴人}{N}%
+  \kian@titl@idcodechecklinetype@A{#1}{被控訴人}{N}%
+  \kian@titl@idcodechecklinetype@A{#1}{上告人}{N}%
+  \kian@titl@idcodechecklinetype@A{#1}{被上告人}{N}%
+  \kian@titl@idcodechecklinetype@A{#1}{申立人}{N}%
+  \kian@titl@idcodechecklinetype@A{#1}{相手方}{N}%
+  \kian@titl@idcodechecklinetype@A{#1}{補助参加人}{N}%
+  \kian@titl@idcodechecklinetype@A{#1}{利害関係人}{N}%
+  \kian@titl@idcodechecklinetype@A{#1}{口頭弁論期日}{C}%
+  \kian@titl@idcodechecklinetype@A{#2}{裁判所書記官}{C}%
+  \kian@titl@idcodechecklinetype@A{#3}{裁判所書記官}{C}%
+  \ifx\@kian@titl@markercurlinetype\relax\kian@titl@idcodechecklinetype@B#1()()\@nil{#2}{#3}\fi%
+}}%
+\def\kian@titl@idcodechecklinetype@A#1#2#3{{%
+  \ifx\@kian@titl@markercurlinetype\relax%
+    \def\@tempfuna{#1}\def\@tempfunb{#2}\ifx\@tempfuna\@tempfunb\xdef\@kian@titl@markercurlinetype{#3}\fi%
+    \def\@tempfuna{#1}\def\@tempfunb{ #2}\ifx\@tempfuna\@tempfunb\xdef\@kian@titl@markercurlinetype{#3}\fi%
+    \def\@tempfuna{#1}\def\@tempfunb{#2 }\ifx\@tempfuna\@tempfunb\xdef\@kian@titl@markercurlinetype{#3}\fi%
+    \def\@tempfuna{#1}\def\@tempfunb{ #2 }\ifx\@tempfuna\@tempfunb\xdef\@kian@titl@markercurlinetype{#3}\fi%
+  \fi%
+}}%
+\def\kian@titl@idcodechecklinetype@B#1(#2)#3()#4\@nil#5#6{{% #1-3:事件番号（狭義）|行部分1 #4:ゴミ #5:行部分2 #6:行部分3
+  \ifx\relax#2\relax%
+    \kian@titl@idcodechecklinetype@C#1[][]\@nil{#5}{#6}%
+  \else%
+    \xdef\@kian@titl@markercurlinetype{I}% 事件番号（狭義）
+  \fi%
+}}%
+\def\kian@titl@idcodechecklinetype@C#1[#2]#3[]#4\@nil#5#6{{% #1-3:事件番号（狭義）|行部分1 #4:ゴミ #5:行部分2 #6:行部分3
+  \ifx\relax#3\relax%
+    \ifx\relax#5\relax%
+      \xdef\@kian@titl@markercurlinetype{C}% コメント
+    \else%
+      \xdef\@kian@titl@markercurlinetype{N}% 肩書と名前
+    \fi%
+  \else%
+    \xdef\@kian@titl@markercurlinetype{I}% 事件番号（狭義）
+  \fi%
+}}%
+
+% 行データの表示
+\def\kian@titl@idcodeprinteachline#1#2#3{{% #1:行部分1 #2:行部分2 #3:行部分3
+  % 位置を記録
+  \@ifundefined{@kian@titl@idcodelocationcenter}{\xdef\@kian@titl@idcodelocationcenter{N}}{}%
+  %\expandafter\ifx\@kian@titl@markerfirstline Y\xdef\@kian@titl@idcodelocationcenter{N}\fi%
+  % 表示
+  \expandafter\ifx\@kian@titl@markercurlinetype C%
+    \kian@titl@idcodeprinteachline@comment{#1}{#2}{#3}% コメント
+  \else\expandafter\ifx\@kian@titl@markercurlinetype I%
+    \kian@titl@idcodeprinteachline@idcode{#1}{#2}% 事件番号（狭義）
+  \else\expandafter\ifx\@kian@titl@markercurlinetype N%
+    \kian@titl@idcodeprinteachline@person{#1}{#2}{#3}% 肩書と名前と外何名
+  \else%
+    \errmessage{Package kian-sect Error: Bad idcode type "\@kian@titl@markercurlinetype"}%
+  \fi\fi\fi%
+}}%
+
+% 行データ（コメント）の表示
+\def\kian@titl@idcodeprinteachline@comment#1#2#3{{% #1-3:コメント
+  % 2段組を停止
+  \xdef\@kian@titl@idcodelocationcenter{N}%
+  % 字下げを適用
+  \kian@titl@applyidcodehlength{}{}{1,2,3}%
+  % 表示位置の調整
+  \expandafter\ifx\@kian@idcodeoptionlocation l\else%
+  \expandafter\ifx\@kian@idcodeoptionlocation c\hfil\else%
+  \expandafter\ifx\@kian@idcodeoptionlocation r\hfill\else%
+  \fi\fi\fi%
+  % 表示
+  {\@ifnextchar\@nil{}{}#1}%
+  \ifx\relax#2\relax\else\hskip1\zw\relax\hskip\kanjiskip\relax{#2}\fi%
+  \ifx\relax#3\relax\else\hskip1\zw\relax\hskip\kanjiskip\relax{#3}\fi%
+}}%
+
+% 行データ（事件番号（狭義）と事件名）の表示
+\def\kian@titl@idcodeprinteachline@idcode#1#2{{% #1:事件番号（狭義） #2:事件名
+  % 2段組を停止
+  \xdef\@kian@titl@idcodelocationcenter{N}%
+  % 字下げを適用
+  \kian@titl@applyidcodehlength{\kian@idcodenumber{#1}}{}{1,2,3,4,5}%
+  % 表示位置の調整
+  \expandafter\ifx\@kian@idcodeoptionlocation l\else%
+  \expandafter\ifx\@kian@idcodeoptionlocation c\hfil\else%
+  \expandafter\ifx\@kian@idcodeoptionlocation r\hfill\else%
+  \fi\fi\fi%
+  % 事件番号（狭義）
+  \setbox0=\hbox{\kian@idcodenumber{#1}}%
+  \dimen0=\dimen4\relax\advance\dimen0 by-\wd0\relax%
+  \leavevmode\box0%
+  \ifdim\dimen0>\z@\hskip\dimen0\relax\fi%
+  % 事件番号（狭義）と事件名の間の空白
+  \hskip\dimen5\relax%
+  % 事件名
+  #2%
+}}%
+
+% 行データ（肩書と名前）の表示
+\def\kian@titl@idcodeprinteachline@person#1#2#3{{% #1:肩書 #2:名前 #3:外何名
+  % 肩書きの幅を適用
+  \edef\@tempfunb{#1}%
+  \ifdim\@kian@titl@idcodehlengthF pt<-1pt\edef\@tempfunb{\kian@titl@idcodelongestposition}\fi%
+  \kian@titl@applyidcodehlength{}{\@tempfunb}{1,2,3,6,7}%
+  % 表示
+  \expandafter\ifx\@kian@idcodeoptioncolumn o%
+    % 1段組
+    \expandafter\ifx\@kian@idcodeoptionlocation l\else%
+    \expandafter\ifx\@kian@idcodeoptionlocation c\hfil\else%
+    \expandafter\ifx\@kian@idcodeoptionlocation r\hfill\else%
+    \fi\fi\fi%
+    \kian@titl@idcodeprinteachline@person@A{#1}{#2}{#3}%
+  \else%
+    % 2段組
+    \setbox0=\hbox{\kian@titl@idcodeprinteachline@person@A{#1}{#2}{#3}}%
+    \expandafter\ifx\@kian@titl@idcodelocationcenter N%
+      % 行頭開始の場合
+      \ifdim\wd0<.5\textwidth%
+        \kian@titl@idcodeprinteachline@person@A{#1}{#2}{#3}%
+        \xdef\@kian@titl@idcodelocationcenter{Y}\xdef\@kian@titl@linebreak{N}%
+        \dimen0=\textwidth\relax\advance\dimen0 by-\dimen1\relax\advance\dimen0 by-\dimen2\relax%
+        \dimen0=.5\dimen0\relax\advance\dimen0 by-\wd0\hskip\dimen0% 中央に移動
+      \else%
+        \kian@titl@idcodeprinteachline@person@A{#1}{#2}{#3}%
+        \xdef\@kian@titl@idcodelocationcenter{N}%
+      \fi%
+    \else%
+      % 中央開始の場合
+      \ifdim\wd0<.5\textwidth%
+        \kian@titl@idcodeprinteachline@person@A{#1}{#2}{#3}%
+        \xdef\@kian@titl@idcodelocationcenter{N}%
+      \else%
+        \par\noindent\hskip-\leftskip\relax\hskip\dimen1\relax\hskip\dimen2\relax% 改行
+        \kian@titl@idcodeprinteachline@person@A{#1}{#2}{#3}%
+        \xdef\@kian@titl@idcodelocationcenter{N}%
+      \fi%
+    \fi%
+  \fi%
+}}%
+\def\kian@titl@idcodeprinteachline@person@A#1#2#3{{% #1:肩書 #2:名前 #3:外何名
+  % 肩書
+  \hbox to\dimen6{\kian@fillkanjiskips\@ifnextchar\@nil{}{}#1}%
+  % 肩書と名前の間の空白
+  \ifx\relax#1\relax\else\hskip\dimen7\relax\fi%
+  % 名前
+  \kian@name[\@kian@titl@idcodehlengthH]{\@ifnextchar\@nil{}{}#2}%
+  \setbox9=\hbox{\@ifnextchar\@nil{}{}#3}%
+  \ifdim\wd9>\z@%
+    % 名前と外何名との間の空白
+    \hskip\dimen9\relax%
+    % 外何名
+    {外}\@ifnextchar\@nil{}{}#3{名}%"外"名
+  \fi%
+}}%
+
+%==========================================================%
+% 標題
+
+%======================================%
+% 設定
+
+% 基本
+\kian@titl@prepareetc{title}{Tit}{2}{3}{size,location}%
+\let\titleorig\title%
+\let\title\kian@title%
+\def\@title{\@kian@title}%
+
+% 横の幅
+\kian@titlehlength%
+   {0}% 全体の字下げ
+  {-1}% 標題の幅（-1:subjectの定義に任せる）
+\def\kian@titl@applytitlehlength{%
+  \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax%
+  \dimen1=\@kian@titl@titlehlengthA\dimen0\relax%
+}%
+
+% 縦の幅
+\kian@titlevlength%
+   {1}% 全データの改段落の幅
+   {1}% 各データの改段落の幅
+   {1}% 各行の改行の幅
+
+%======================================%
+% 関数
+
+% オプションのデフォルト設定
+\def\kian@titl@titleapplydefaultoption{{%
+  \kian@titleoptionsize{x}% 文字サイズ（x:指定なし/n:並/b:大）
+  \kian@titleoptionlocation{c}% 表示位置（l:左寄せ/c:中央寄せ/r:右寄せ）
+}}%
+\kian@titl@titleapplydefaultoption%
+
+% 各データのオプション解析
+\def\kian@titl@titleapplyoption#1{{% #1:オプション
+  \expandafter\ifx\expandafter l#1\kian@titleoptionlocation{l}\else% 表示左
+  \expandafter\ifx\expandafter c#1\kian@titleoptionlocation{c}\else% 表示中央
+  \expandafter\ifx\expandafter r#1\kian@titleoptionlocation{r}\else% 表示右
+  \expandafter\ifx\expandafter n#1\kian@titleoptionsize{n}\else% 文字サイズ並
+  \expandafter\ifx\expandafter b#1\kian@titleoptionsize{b}\else% 文字サイズ大
+  \xdef\@kian@titl@titlehlengthB{#1}% 標題の幅
+  \fi\fi\fi\fi\fi%
+}}%
+
+% 各データのデータ解析
+\def\kian@titl@titleanalyzeeachdata#1{{% #1:各データ
+}}%
+
+% 行データのタイプ解析
+\def\kian@titl@titlechecklinetype#1#2#3{{% #1:行部分1 #2:行部分2 #3:行部分3
+  \xdef\@kian@titl@markercurlinetype{T}% サブタイトルでないタイトル
+}}%
+
+% 行データの表示
+\def\kian@titl@titleprinteachline#1#2#3{{% #1:行部分1 #2:行部分2 #3:行部分3
+  \kian@titl@applytitlehlength%
+  \ifdim\@kian@titl@titlehlengthB pt=-\p@\def\@kian@titl@titlehlengthB{}\fi%
+  \expandafter\ifx\@kian@titl@markercurlinetype T\kian@titl@titleprinteachline@title{#1}\else% タイトル
+  \expandafter\ifx\@kian@titl@markercurlinetype S\kian@titl@titleprinteachline@subtitle{#1}\else% サブタイトル
+  \errmessage{Package kian-sect Error: Bad title type "\@kian@titl@markercurlinetype"}%
+  \fi\fi%
+}}%
+
+% 行データ（タイトル）の表示
+\def\kian@titl@titleprinteachline@title#1{{% #1:タイトル
+  \expandafter\ifx\@kian@titleoptionsize n%
+    \kian@subject[\@kian@titl@titlehlengthB\@kian@titleoptionlocation]{#1}\else%
+    \kian@Subject[\@kian@titl@titlehlengthB\@kian@titleoptionlocation]{#1}\fi%
+}}%
+
+% 行データ（サブタイトル）の表示
+\def\kian@titl@titleprinteachline@subtitle#1{{% #1:サブタイトル
+  \expandafter\ifx\@kian@titleoptionsize b%
+    \kian@Subject[\@kian@titl@titlehlengthB\@kian@titleoptionlocation]{#1}\else%
+    \kian@subject[\@kian@titl@titlehlengthB\@kian@titleoptionlocation]{#1}\fi%
+}}%
+
+%==========================================================%
+% 日付
+
+%======================================%
+% 設定
+
+% 基本
+\kian@titl@prepareetc{date}{Dat}{1}{3}{calendar,location}%
+\let\dateorig\date%
+\let\date\kian@date%
+\def\@date{\@kian@date}%
+
+% 横の幅
+\kian@datehlength%
+   {0}% 全体の字下げ
+\def\kian@titl@applydatehlength{%
+  \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax%
+  \dimen1=\@kian@titl@datehlengthA\dimen0\relax%
+}%
+
+% 縦の幅
+\kian@datevlength%
+   {1}% 全データの改段落の幅
+   {1}% 各データの改段落の幅
+   {1}% 各行の改行の幅
+
+%======================================%
+% 関数
+
+% オプションのデフォルト設定
+\def\kian@titl@dateapplydefaultoption{{%
+  \kian@dateoptioncalendar{x}% 設定に委ねる
+  \kian@dateoptionlocation{r}% 表示位置（l:左/c:中/r:右）
+}}%
+\kian@titl@dateapplydefaultoption%
+
+% 各データのオプション解析
+\def\kian@titl@dateapplyoption#1{{% #1:オプション
+  \expandafter\ifx\@kian@dateoptioncalendar x%
+    \ifwesterncalender\kian@dateoptioncalendar{w}\else% 西暦
+    \ifjapanesecalender\kian@dateoptioncalendar{j}\else% 和暦
+    \kian@dateoptioncalendar{d}\fi\fi% 両暦
+  \fi%
+  \expandafter\ifx\expandafter w#1\kian@dateoptioncalendar{w}\else%
+  \expandafter\ifx\expandafter j#1\kian@dateoptioncalendar{j}\else%
+  \expandafter\ifx\expandafter d#1\kian@dateoptioncalendar{d}\else%
+  \expandafter\ifx\expandafter l#1\kian@dateoptionlocation{l}\else%
+  \expandafter\ifx\expandafter c#1\kian@dateoptionlocation{c}\else%
+  \expandafter\ifx\expandafter r#1\kian@dateoptionlocation{r}\else%
+  \kian@dateoptionlocation{#1}%
+  \fi\fi\fi\fi\fi\fi%
+}}%
+
+% 各データのデータ解析
+\def\kian@titl@dateanalyzeeachdata#1{{% #1:各データ
+}}%
+
+% 行データのタイプ解析
+\def\kian@titl@datechecklinetype#1#2#3{{% #1:行部分1 #2:行部分2 #3:行部分3
+  \xdef\@kian@titl@markercurlinetype{D}%
+}}%
+
+% 行データの表示
+\def\kian@titl@dateprinteachline#1#2#3{{% #1:行部分1 #2:行部分2 #3:行部分3
+  % 暦の適用
+  \expandafter\ifx\@kian@dateoptioncalendar j\japanesecalender\else%
+  \expandafter\ifx\@kian@dateoptioncalendar d\doublecalender\else%
+  \expandafter\ifx\@kian@dateoptioncalendar w\westerncalender\fi\fi\fi%
+  % 横幅の適用
+  \kian@titl@applydatehlength%
+  % 表示
+  \kian@titl@dateprinteachline@A{#1}%
+}}%
+\def\kian@titl@dateprinteachline@A#1{{% #1:日付（単数）
+  % データ
+  \ifx\relax#1\relax\else%
+    % 表示
+    \def\@tempfuna{-b}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+      \kian@titl@dateprinteachline@blankdate\else% 年号記入無し空欄
+    \def\@tempfuna{ -b}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+      \kian@titl@dateprinteachline@blankdate\else% 年号記入無し空欄
+    \def\@tempfuna{-b }\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+      \kian@titl@dateprinteachline@blankdate\else% 年号記入無し空欄
+    \def\@tempfuna{ -b }\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+      \kian@titl@dateprinteachline@blankdate\else% 年号記入無し空欄
+    \def\@tempfuna{-B}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+      \kian@titl@dateprinteachline@blankdate*\else% 年号記入有り空欄
+    \def\@tempfuna{ -B}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+      \kian@titl@dateprinteachline@blankdate*\else% 年号記入有り空欄
+    \def\@tempfuna{-B }\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+      \kian@titl@dateprinteachline@blankdate*\else% 年号記入有り空欄
+    \def\@tempfuna{ -B }\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+      \kian@titl@dateprinteachline@blankdate*\else% 年号記入有り空欄
+    \kian@titl@dateprinteachline@common{#1}% 通常
+    \fi\fi\fi\fi\fi\fi\fi\fi%
+  \fi%
+}}%
+\def\kian@titl@dateprinteachline@blankdate{{% #1:日付（単数）
+  \vskip\@kian@titl@blankvskip\baselineskip%
+  \noindent\hskip\dimen1\relax%
+  \expandafter\ifx\@kian@dateoptionlocation l\else%
+  \expandafter\ifx\@kian@dateoptionlocation c\hfil\else%
+  \expandafter\ifx\@kian@dateoptionlocation r\hfill\else%
+  \kian@hspaceonkian[=]{\@kian@dateoptionlocation}\fi\fi\fi%
+}\kian@blankdate}%
+
+\def\kian@titl@dateprinteachline@common#1{{% #1:日付（単数）
+  \noindent\hskip\dimen1\relax%
+  \expandafter\ifx\@kian@dateoptionlocation l\else%
+  \expandafter\ifx\@kian@dateoptionlocation c\hfil\else%
+  \expandafter\ifx\@kian@dateoptionlocation r\hfill\else%
+  \kian@hspaceonkian[=]{\@kian@dateoptionlocation}\fi\fi\fi%
+  {#1}%
+}}%
+
+%==========================================================%
+% 受信人
+
+%======================================%
+% 設定
+
+% 基本
+\kian@titl@prepareetc{receiver}{Rec}{8}{3}{size,vskip}%
+
+% 横の幅
+\kian@receiverhlength%
+   {0}% 全体の字下げ
+   {0}% 全体の2行目以下の字下げ
+   {0}% 行データの2行目以下の字下げ
+   {0}% 肩書き付き名前の字下げ
+  {-1}% 肩書きの幅
+   {1}% 肩書きと名前の間の幅
+   {7}% 名前の幅
+   {1}% 名前と敬称の間の幅
+\def\kian@titl@applyreceiverhlength#1#2{%
+  \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax%
+  \dimen1=\@kian@titl@receiverhlengthA\dimen0\relax%
+  \expandafter\ifx\@kian@titl@markerfirstline Y%
+    \dimen2=\z@\relax\else%
+    \dimen2=\@kian@titl@receiverhlengthB\dimen0\relax\fi%
+  \dimen3=\@kian@titl@receiverhlengthC\dimen0\relax%
+  \expandafter\ifx\@kian@titl@markercurlinetype N%
+    \dimen4=\@kian@titl@receiverhlengthD\dimen0\relax\else%
+    \dimen4=\z@\relax\fi%
+  \ifdim\@kian@titl@receiverhlengthE pt<\z@%
+    \setbox0=\hbox{#1}\dimen5=\wd0\relax\else%
+    \dimen5=\@kian@titl@receiverhlengthE\dimen0\relax\advance\dimen5 by-\kanjiskip\relax\fi%
+  \dimen6=\@kian@titl@receiverhlengthF\dimen0\relax\advance\dimen6 by-\kanjiskip\relax%
+  \dimen7=\@kian@titl@receiverhlengthG\dimen0\relax\advance\dimen7 by+\kanjiskip\relax%
+  \dimen8=\@kian@titl@receiverhlengthH\dimen0\relax\advance\dimen8 by-\kanjiskip\relax%
+  \leftskip=\z@\relax%
+  \@for\@tempfuna:=#2\do{%
+    \ifcase\@tempfuna\or%
+      \advance\leftskip by\dimen1\relax\or%
+      \advance\leftskip by\dimen2\relax\or%
+      \advance\leftskip by\dimen3\relax\or%
+      \advance\leftskip by\dimen4\relax\or%
+      \advance\leftskip by\dimen5\relax\or%
+      \advance\leftskip by\dimen6\relax\or%
+      \advance\leftskip by\dimen7\relax\or%
+      \advance\leftskip by\dimen8\relax\or%
+      \advance\leftskip by\dimen9\relax\fi%
+  }%
+  \global\leftskip=\leftskip%
+  \noindent\hskip-\leftskip\relax% 行頭へ移動
+  \hskip\dimen1\relax%
+  \hskip\dimen2\relax%
+  \hskip\dimen4\relax%
+}%
+
+% 縦の幅
+\kian@receivervlength%
+   {1}% 全データの改段落の幅
+   {1}% 各データの改段落の幅
+   {1}% 各行の改行の幅
+
+%======================================%
+% 関数
+
+% オプションのデフォルト設定
+\def\kian@titl@receiverapplydefaultoption{{%
+  \kian@receiveroptionsize{n}% 名前の文字サイズ（n:並/b:大）
+  \kian@receiveroptionvskip{0}% 行データ間の改行の調整幅
+}}%
+\kian@titl@receiverapplydefaultoption%
+
+% 各データのオプション解析
+\def\kian@titl@receiverapplyoption#1{% #1:オプション
+  \expandafter\ifx\expandafter s#1\kian@receiverhlength{}{}{}{}{}{}{-1}{}\else% 名前の長さ
+  \expandafter\ifx\expandafter n#1\kian@receiveroptionsize{n}\else% 文字サイズ並
+  \expandafter\ifx\expandafter b#1\kian@receiveroptionsize{b}\else% 文字サイズ大
+  \kian@receiveroptionvskip{#1}% 行データ間の改行の調整幅
+  \fi\fi\fi%
+}%
+
+% 各データのデータ解析
+\def\kian@titl@receiveranalyzeeachdata#1{% #1:各データ
+}%
+
+% 行データのタイプ解析
+\def\kian@titl@receiverchecklinetype#1#2#3{% #1:行部分1 #2:行部分2 #3:行部分3
+  \ifx\relax#2#3\relax%
+    \xdef\@kian@titl@markercurlinetype{B}% 所属
+  \else%
+    \xdef\@kian@titl@markercurlinetype{N}% 肩書付き名前
+  \fi%
+}%
+
+% 行データの表示
+\def\kian@titl@receiverprinteachline#1#2#3{% #1:行部分1 #2:行部分2 #3:行部分3
+  % 行データ間の改行幅の調整
+  \expandafter\ifx\@kian@titl@markerfirstline N\vskip\@kian@receiveroptionvskip\baselineskip\relax\fi%
+  % 表示
+  \expandafter\ifx\@kian@titl@markercurlinetype B\kian@titl@receiverprinteachline@belong{#1}\else% 所属
+  \expandafter\ifx\@kian@titl@markercurlinetype N\kian@titl@receiverprinteachline@name{#1}{#2}{#3}\else% 所属
+  \errmessage{Package kian-sect Error: Bad receiver type "\@kian@titl@markercurlinetype"}%
+  \fi\fi%
+}%
+
+% 行データ（所属）の表示
+\def\kian@titl@receiverprinteachline@belong#1{%
+  \noindent%
+  \kian@titl@applyreceiverhlength{}{1,2,3}%
+  \hbox{\kian@minustodash{\@ifnextchar\@nil{}{}#1}}% "\hbox"は行頭の括弧を詰めるため
+}%
+
+% 行データ（名前）の表示
+\def\kian@titl@receiverprinteachline@name#1#2#3{{% #1:肩書 #2:名前 #3:敬称
+  \kian@titl@receiverprinteachline@name@A#1///\@nil{#2}{#3}%
+}}%
+\def\kian@titl@receiverprinteachline@name@A#1/#2/#3/#4\@nil#5#6{{% #1-3:肩書 #4:ゴミ #5:名前 #6:敬称
+  \skip0=\baselineskip\relax\advance\skip0 by-\@kian@titl@receivervlengthC\baselineskip\relax%
+  \ifx\relax#3\relax%
+    % 強制改行はない場合
+    \ifx\relax#2\relax%
+      % 自動改行はない場合
+      \kian@titl@receiverprinteachline@name@C{#1}{#5}{#6}%
+    \else%
+      % 自動改行がある場合
+      \setbox0=\hbox{\@ifnextchar\@nil{}{}#1#2}%
+      \ifdim\wd0>\dimen5%
+        % 肩書枠に収まらない場合
+        \kian@titl@applyreceiverhlength{}{1,2,3,4}%
+        {\@ifnextchar\@nil{}{}#1}\vskip-\skip0\relax%
+        \kian@titl@receiverprinteachline@name@C{#2}{#5}{#6}%
+      \else%
+        % 肩書枠に収まる場合
+        \kian@titl@receiverprinteachline@name@C{#1#2}{#5}{#6}%
+      \fi%
+    \fi%
+  \else%
+    % 強制改行がある場合
+    \kian@titl@applyreceiverhlength{}{1,2,3,4}%
+    {\@ifnextchar\@nil{}{}#1#2}\vskip-\skip0\relax%
+    \kian@titl@receiverprinteachline@name@C{#3}{#5}{#6}%
+  \fi%
+}}%
+\def\kian@titl@receiverprinteachline@name@C#1#2#3{{% #1:肩書 #2:名前 #3:敬称
+  % 文字サイズ大の場合の修正
+  \expandafter\ifx\@kian@receiveroptionsize b%
+    \setbox0=\hbox{\kian@Name{□}}%"□
+    \setbox1=\hbox{\kian@name{□}}%"□
+    \dimen0=\z@%
+    \advance\dimen0 by+\ht0\relax%\advance\dimen0 by+\dp0\relax%
+    \advance\dimen0 by-\ht1\relax%\advance\dimen0 by-\dp1\relax%
+    \vskip\dimen0\relax\noindent%
+  \fi%
+  % 字下げを適用
+  \kian@titl@applyreceiverhlength{#1}{1,2,3,4,5,6}%
+  % 肩書
+  \setbox7=\hbox{\@ifnextchar\@nil{}{}#1}%
+  \ifdim\wd7>\z@%
+    \@ifnextchar\@nil{}{}#1%
+    \ifdim\wd7<\dimen5{\hskip-\wd7\hskip\dimen5}\fi%
+  \fi%
+  % 前の空白と名前
+  \setbox8=\hbox{\@ifnextchar\@nil{}{}#2}%
+  \ifdim\wd8>\z@%
+    \ifdim\wd7>\z@\hskip\dimen6\relax\fi%
+    \expandafter\ifx\@kian@receiveroptionsize n%
+      \kian@name[\@kian@titl@receiverhlengthG]{\@ifnextchar\@nil{}{}#2}\else%
+      \kian@Name[\@kian@titl@receiverhlengthG]{\@ifnextchar\@nil{}{}#2}\fi%
+  \fi%
+  % 前の空白と敬称
+  \setbox9=\hbox{\@ifnextchar\@nil{}{}#3}%
+  \ifdim\wd9>\z@%
+    \hskip\dimen8\relax%
+    \@ifnextchar\@nil{}{}#3%
+  \fi%
+}}%
+
+%==========================================================%
+% 発信人
+
+%======================================%
+% 設定
+
+% 基本
+\kian@titl@prepareetc{sender}{Sen}{4}{4}{locationofposition,namevskip}%
+
+% 横の幅
+\kian@senderhlength%
+ {13}% 全体の字下げ幅
+ {10}% 肩書の幅
+  {2}% 肩書きと名前の間の幅
+ {10}% 名前の幅
+\def\kian@titl@applysenderhlength{%
+  \kian@titl@personaddresshlength%
+    {\@kian@titl@senderhlengthA}%
+    {}{}{}{}{}%
+  \kian@titl@personnamehlength%
+    {\@kian@titl@senderhlengthA}%
+    {\@kian@titl@senderhlengthB}%
+    {\@kian@titl@senderhlengthC}%
+    {\@kian@titl@senderhlengthD}%
+}%
+
+% 縦の幅
+\kian@sendervlength%
+   {1}% 全データの改段落の幅
+   {1}% 各データの改段落の幅
+   {1}% 各行の改行の幅
+   {1}% 名前間の改行幅
+
+%======================================%
+% 関数
+
+% オプションのデフォルト設定
+\def\kian@titl@senderapplydefaultoption{{%
+  \kian@senderoptionlocationofposition{j}% 肩書表示位置（l:左寄せ/c:中央寄せ/r:右寄せ/j:均等割付け）
+  \kian@senderoptionnamevskip{0}% 名前間の改行の調整幅
+}}%
+\kian@titl@senderapplydefaultoption%
+
+% 各データのオプション解析
+\def\kian@titl@senderapplyoption#1{{% #1:オプション
+  \expandafter\ifx\expandafter l#1\kian@senderoptionlocationofposition{l}\else% 肩書の左寄せ
+  \expandafter\ifx\expandafter c#1\kian@senderoptionlocationofposition{c}\else% 肩書の中央寄せ
+  \expandafter\ifx\expandafter r#1\kian@senderoptionlocationofposition{r}\else% 肩書の右寄せ
+  \expandafter\ifx\expandafter j#1\kian@senderoptionlocationofposition{j}\else% 肩書の均等割付け
+  \kian@senderoptionnamevskip{#1}% 名前間の改行の調整幅
+  \fi\fi\fi\fi%
+}}%
+
+% 各データのデータ解析
+\def\kian@titl@senderanalyzeeachdata#1{{% #1:各データ
+}}%
+
+% 行データのタイプ解析
+\def\kian@titl@senderchecklinetype#1#2#3{{% #1:行部分1 #2:行部分2 #3:行部分3
+  \setbox0=\hbox{\@ifnextchar\@nil{}{}#1}%
+  \setbox1=\hbox{\@ifnextchar\@nil{}{}#2}%
+  \ifdim\wd0=\z@%
+    \ifdim\wd1=\z@%
+      % (行部分1,行部分2)=(無,無)
+    \else%
+      % (行部分1,行部分2)=(無,有)
+      \xdef\@kian@titl@markercurlinetype{A}% 住所
+    \fi%
+  \else%
+    \ifdim\wd1=\z@%
+      % (行部分1,行部分2)=(有,無)
+      \kian@titl@numberratio{#1}%
+      \ifnum\@kian@result>66% 数字が3分2以上
+        \xdef\@kian@titl@markercurlinetype{T}% 電話とファックス
+      \else%
+        \xdef\@kian@titl@markercurlinetype{A}% 住所
+      \fi%
+    \else%
+      % (行部分1,行部分2)=(有,有)
+      \kian@titl@numberratio{#1}%
+      \ifnum\@kian@result>66% 数字が3分2以上
+        \xdef\@kian@titl@markercurlinetype{A}% 住所
+      \else%
+        \xdef\@kian@titl@markercurlinetype{N}% 肩書付き名前
+      \fi%
+    \fi%
+    % （公印省略）の修正
+    \def\@tempfuna{#1}%
+    \def\@tempfunb{（公印省略）}\ifx\@tempfuna\@tempfunb%
+      \xdef\@kian@titl@markercurlinetype{O}\else% 公印省略
+    \def\@tempfunb{ （公印省略）}\ifx\@tempfuna\@tempfunb%
+      \xdef\@kian@titl@markercurlinetype{O}\else% 公印省略
+    \def\@tempfunb{（公印省略） }\ifx\@tempfuna\@tempfunb%
+      \xdef\@kian@titl@markercurlinetype{O}\else% 公印省略
+    \def\@tempfunb{ （公印省略） }\ifx\@tempfuna\@tempfunb%
+      \xdef\@kian@titl@markercurlinetype{O}\else% 公印省略
+    \def\@tempfunb{(公印省略)}\ifx\@tempfuna\@tempfunb%
+      \xdef\@kian@titl@markercurlinetype{O}\else% 公印省略
+    \def\@tempfunb{ (公印省略)}\ifx\@tempfuna\@tempfunb%
+      \xdef\@kian@titl@markercurlinetype{O}\else% 公印省略
+    \def\@tempfunb{(公印省略) }\ifx\@tempfuna\@tempfunb%
+      \xdef\@kian@titl@markercurlinetype{O}\else% 公印省略
+    \def\@tempfunb{ (公印省略) }\ifx\@tempfuna\@tempfunb%
+      \xdef\@kian@titl@markercurlinetype{O}\else% 公印省略
+    \fi\fi\fi\fi\fi\fi\fi\fi%
+  \fi%
+}}%
+
+% 行データの表示
+\def\kian@titl@senderprinteachline#1#2#3{{% #1:行部分1 #2:行部分2 #3:行部分3
+  \def\@tempfuna{-s}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@space{#2}\else% ブランク
+  \def\@tempfuna{ -s}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@space{#2}\else% ブランク
+  \def\@tempfuna{-s }\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@space{#2}\else% ブランク
+  \def\@tempfuna{ -s }\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@space{#2}\else% ブランク
+  \def\@tempfuna{-S}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@stamp{#2}\else% スタンプ
+  \def\@tempfuna{ -S}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@stamp{#2}\else% スタンプ
+  \def\@tempfuna{-S }\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@stamp{#2}\else% スタンプ
+  \def\@tempfuna{ -S }\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@stamp{#2}\else% スタンプ
+  \def\@tempfuna{-b}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@blank{#2}\else% 署名欄
+  \def\@tempfuna{ -b}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@blank{#2}\else% 署名欄
+  \def\@tempfuna{-b }\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@blank{#2}\else% 署名欄
+  \def\@tempfuna{ -b }\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@blank{#2}\else% 署名欄
+  \def\@tempfuna{-B}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@Blank{#2}\else% 署名欄
+  \def\@tempfuna{ -B}\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@Blank{#2}\else% 署名欄
+  \def\@tempfuna{-B }\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@Blank{#2}\else% 署名欄
+  \def\@tempfuna{ -B }\def\@tempfunb{#1}\ifx\@tempfuna\@tempfunb%
+    \kian@titl@senderprinteachline@Blank{#2}\else% 署名欄
+  \kian@titl@senderprinteachline@common{#1}{#2}{#3}% 通常
+  \fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi%
+}}%
+
+% 行データ（スペース）の表示
+\def\kian@titl@senderprinteachline@space#1{{% #1:行部分2
+  \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax\dimen0=12\dimen0\relax\advance\dimen0 by-\kanjiskip\relax%
+  \ifx\relax#1\relax\else\kian@hspaceonkian[=]{25}\hbox to\dimen0{\hss#1\hfill}\fi%
+  \vskip3\baselineskip% ブランク
+}}%
+
+% 行データ（スタンプ）の表示
+\def\kian@titl@senderprinteachline@stamp#1{{% #1:行部分2
+  \kian@titl@senderstamp[#1]% スタンプ
+}}%
+
+% 行データ（ブランク）の表示
+\def\kian@titl@senderprinteachline@blank#1{{% #1:行部分2
+  \kian@signaturecolumn{#1}%
+}}%
+\def\kian@titl@senderprinteachline@Blank#1{{% #1:行部分2
+  \kian@signaturecolumn*{#1}%
+}}%
+
+% 行データ（通常）の表示
+\def\kian@titl@senderprinteachline@common#1#2#3{{% #1:行部分1 #2:行部分2 #3:行部分3
+  \kian@titl@applysenderhlength%
+  \expandafter\ifx\@kian@titl@markercurlinetype N%
+    \expandafter\ifx\@kian@titl@markeroldlinetype N%
+      \begingroup%
+        \skip0=\@kian@titl@sendervlengthD\baselineskip\relax\advance\skip0 by-\baselineskip\relax%
+        \vskip\skip0\relax%
+        \vskip\@kian@senderoptionnamevskip\baselineskip\relax%
+      \endgroup%
+    \fi%
+  \fi%
+  \expandafter\ifx\@kian@titl@markercurlinetype A%
+    % 住所
+    \kian@titl@personaddress{}{#1}{#2}\else%
+  \expandafter\ifx\@kian@titl@markercurlinetype N%
+    % 差出人の名前
+    \kian@titl@personname[\@kian@senderoptionlocationofposition]{}{#1}{#2}%
+    \ifx\relax#3\relax\else\setbox1=\hbox{#3}\ifdim\wd1>1\zw%
+      % 幅が1文字以上の場合
+      \par\kian@titl@personname[\@kian@senderoptionlocationofposition]{}{}{\hfill\mbox{#3}}\else%
+      % 幅が1文字以下の場合
+      \hfill#3\fi\fi%
+    \else%
+  \expandafter\ifx\@kian@titl@markercurlinetype n%
+    % 差出人以外の名前
+    \kian@titl@personname[\@kian@senderoptionlocationofposition]{}{#1}{#2}%
+    \ifx\relax#3\relax\else\setbox1=\hbox{#3}\ifdim\wd1>1\zw%
+      % 幅が1文字以上の場合
+      \par\kian@titl@personname[\@kian@senderoptionlocationofposition]{}{}{\hfill\mbox{#3}}\else%
+      % 幅が1文字以下の場合
+      \hfill#3\fi\fi%
+    \else%
+  \expandafter\ifx\@kian@titl@markercurlinetype T%
+    % 電話とファックス
+    \kian@titl@persontelephone{T=#1}\else%
+  \expandafter\ifx\@kian@titl@markercurlinetype O%
+    % 「（公印省略）」
+    \kian@titl@senderprinteachline@noseal\else%
+    %\kian@titl@personname[\@kian@senderoptionlocationofposition]{}{}{\hfill\mbox{#1}}\else%
+  \errmessage{Package kian-sect Error: Bad sender type "\@kian@titl@markercurlinetype"}%
+  \fi\fi\fi\fi\fi%
+}}%
+
+% 「（公印省略）」の表示
+\def\kian@titl@senderprinteachline@noseal{{%
+  \kian@titl@personname[\@kian@senderoptionlocationofposition]{}{}{\hfill\mbox{%
+    {（公印省略）}%"（"公"印"省"略"）
+  }}%
+}}%
+
+%======================================%
+% \authorとの整合性
+
+\let\authororig\author%
+\let\author\sender%
+\def\printauthor{\printsender}%
+
+%==========================================================%
+% 道具
+
+%======================================%
+% 括弧に入れる
+
+% 使用法：\kian@putinparenthesis{文字列}
+\def\kian@putinparenthesis#1{% #1:文字列
+  (#1)%
+}%
+\@ifundefined{putinparenthesis}{\let\putinparenthesis\kian@putinparenthesis}{}%
+
+%======================================%
+% 事件番号（狭義）
+
+% 使用法：\kian@putinparenthesis{元記号年(記号)番号}
+\def\kian@idcodenumber{%
+  \@ifnextchar[{\kian@titl@idcodenumber@A}{\kian@titl@idcodenumber@A[]}%]
+}%
+\def\kian@titl@idcodenumber@A[#1]#2{{% #1:オプション #2:事件番号（狭義）
+  \kian@titl@idcodenumber@B[#1]#2()()\@nil%
+}}%
+\def\kian@titl@idcodenumber@B[#1]#2#3(#4)#5()#6\@nil{{% #1:オプション #2:元記号 #3:年 #4:記号 #5:番号
+  \ifx\relax#4\relax%
+    \kian@titl@idcodenumber@C[#1]#2#3[][]\@nil%
+  \else%
+    \ifx\relax#5\relax%
+      \kian@titl@idcodenumber@D[#1]{#2}{#3}[Y]{#4}{\hskip3\zw\relax\hskip2\kanjiskip\relax}%
+    \else%
+      \kian@titl@idcodenumber@D[#1]{#2}{#3}[Y]{#4}{#5}%
+    \fi%
+  \fi%
+}}%
+\def\kian@titl@idcodenumber@C[#1]#2#3[#4]#5[]#6\@nil{{% #1:オプション #2:元記号 #3:年 #4:記号 #5:番号
+  \ifx\relax#5\relax%
+    \kian@titl@idcodenumber@D[#1]{#2}{#3}[N]{#4}{\hskip3\zw\relax\hskip2\kanjiskip\relax}%
+  \else%
+    \kian@titl@idcodenumber@D[#1]{#2}{#3}[N]{#4}{#5}%
+  \fi%
+}}%
+\def\kian@titl@idcodenumber@D[#1]#2#3[#4]#5#6{{% #1:オプション #2:元記号 #3:年 #4:括弧の有無 #5:記号 #6:番号
+  \kian@titl@idcodenumber@E[#1]#2#3[#4]{#5}#6::\@nil%
+}}%
+\def\kian@titl@idcodenumber@E[#1]#2#3[#4]#5#6:#7:#8\@nil{{% #1:オプション #2:元記号 #3:年 #4:括弧の有無 #5:記号 #6:番号 #7:事件名
+  \kian@titl@idcodenumber@F[#1]#2#3[#4]{#5}{#6}{#7}%
+}}%
+\def\kian@titl@idcodenumber@F[#1]#2#3[#4]#5#6#7{{% #1:オプション #2:元記号 #3:年 #4:括弧の有無 #5:記号 #6:番号 #7:事件名
+  % 調査と元号（※ 改元時要変更）
+  \expandafter\expandafter\expandafter\ifx\expandafter#2\kian@gengo@char@A\edef\@tempfuna{\kian@gengo@A}\else% 明治
+  \expandafter\expandafter\expandafter\ifx\expandafter#2\kian@gengo@char@B\edef\@tempfuna{\kian@gengo@B}\else% 大正
+  \expandafter\expandafter\expandafter\ifx\expandafter#2\kian@gengo@char@C\edef\@tempfuna{\kian@gengo@C}\else% 昭和
+  \expandafter\expandafter\expandafter\ifx\expandafter#2\kian@gengo@char@D\edef\@tempfuna{\kian@gengo@D}\else% 平成
+  \expandafter\expandafter\expandafter\ifx\expandafter#2\kian@gengo@char@E\edef\@tempfuna{\kian@gengo@E}\else% 令和
+  \expandafter\expandafter\expandafter\ifx\expandafter#2\kian@gengo@char@F\edef\@tempfuna{\kian@gengo@F}\else% ＦＦ
+  \expandafter\expandafter\expandafter\ifx\expandafter#2\kian@gengo@char@G\edef\@tempfuna{\kian@gengo@G}\else% ＧＧ
+  \expandafter\expandafter\expandafter\ifx\expandafter#2\kian@gengo@char@H\edef\@tempfuna{\kian@gengo@H}\else% ＨＨ
+  \edef\@tempfuna{}\fi\fi\fi\fi\fi\fi\fi\fi%
+  \expandafter\ifx\expandafter\relax\@tempfuna\relax\def\@tempfund{#2#3}\else\def\@tempfund{#3}\fi%
+  % "年度"の修正
+  \edef\@tempfunb{}\edef\@tempfunc{年}%"年
+  \expandafter\@tfor\expandafter\@tempfune\expandafter:\expandafter=\@tempfund\do{%
+    \expandafter\ifx\@tempfune d%
+      \edef\@tempfunc{\@tempfunc度}\relax%"度
+    \else%
+      \edef\@tempfunb{\@tempfunb\@tempfune}\relax%
+    \fi%
+  }%
+  % "元年"の修正
+  \expandafter\ifx\expandafter\relax\@tempfuna\relax\else%
+    \edef\@tempfune{1}\ifx\@tempfunb\@tempfune\edef\@tempfunb{元}\fi%"元
+    \edef\@tempfune{01}\ifx\@tempfunb\@tempfune\edef\@tempfunb{元}\fi%"元
+  \fi%
+  % 出力
+  \kian@titl@idcodenumber@G[#1]{\@tempfuna}{\@tempfunb}{\@tempfunc}[#4]{#5}{#6}{#7}%
+}}%
+\def\kian@titl@idcodenumber@G[#1]#2#3#4[#5]#6#7#8{{% #1:オプション #2:元号 #3:年 #4:年度 #5:括弧の有無 #6:記号 #7:番号 #8:事件名
+  % 年
+  #2#3#4%
+  % 記号
+  \expandafter\ifx#5Y\kian@putinparenthesis{#6}\else{#6}\fi%
+  % 番号
+  {第}#7{号}%"第"号
+  % 事件名
+  #8%
+}}%
+\@ifundefined{idcodenumber}{\let\idcodenumber\kian@idcodenumber}{}%
+\@ifundefined{Idn}{\let\Idn\kian@idcodenumber}{}%
+
+%======================================%
+% 人の名前
+
+%==================%
+% 1.00倍の名前
+
+% 使用法：\kian@name{名前}，\kian@name[幅]{名前}，\kian@name{氏/名}, \kian@name[幅]{氏/名}
+% 戻り値：0=均等割付けの場合 1=文字列が長すぎる場合 2=特殊なモードの場合
+\def\kian@name{%
+  \@ifnextchar[{\kian@titl@name@A}{\kian@titl@name@A[10]}%]
+}%
+\def\kian@titl@name@A[#1]#2{{%
+  {\kian@titl@namecore[#1]{#2}}%
+}}%
+\@ifundefined{name}{\let\name\kian@name}{}%
+\@ifundefined{Nam}{\let\Nam\kian@name}{}%
+
+%==================%
+% 1.25倍の名前
+
+% 使用法：\kian@Name{名前}，\kian@Name[幅]{名前}，\kian@Name{氏/名}, \kian@Name[幅]{氏/名}
+% 戻り値：0=均等割付けの場合 1=文字列が長すぎる場合 2=特殊なモードの場合
+\def\kian@Name{%
+  \@ifnextchar[{\kian@titl@Name@A}{\kian@titl@Name@A[8]}%]
+}%
+\def\kian@titl@Name@A[#1]#2{{%
+  {\large\kian@titl@namecore[#1]{#2}}%
+}}%
+\@ifundefined{Name}{\let\Name\kian@Name}{}%
+\@ifundefined{NAM}{\let\NAM\kian@Name}{}%
+
+%==================%
+% 名前の核心
+
+% 使用法：\kian@namecore{名前}, \kian@namecore[幅]{名前}, \kian@namecore{氏/名}, \kian@namecore[幅]{氏/名}
+% 戻り値：0=均等割付けの場合 1=文字列が長すぎる場合 2=特殊なモードの場合
+\def\kian@titl@namecore[#1]#2{{% #1:長さ #2:名前又は氏名
+  \expandafter\kian@titl@namecore@A#2//\@nil[#1]%
+}}%
+\def\kian@titl@namecore@A#1/#2/#3\@nil[#4]{{% #1:名前又は氏 #2:名 #4:長さ
+  \ifx\relax#2\relax%
+    \kian@titl@namecore@B[#4]{#1}\else% 法人の場合
+    \kian@titl@namecore@C[#4]{#1}{#2}\fi% 自然人の場合
+}}%
+% 法人の場合
+\def\kian@titl@namecore@B[#1]#2{{% #1:長さ #2:名前
+  \ifdim#1pt<\z@%
+    % ゼロの場合
+    \leavevmode#2\relax% (均等割付をせずに表示)
+    \xdef\@kian@result{2}%
+  \else%
+    % プラスの場合
+    \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax%
+    \dimen0=#1\dimen0\relax\advance\dimen0 by-\kanjiskip\relax% 枠の長さ
+    \setbox0=\hbox{#2}%
+    \ifdim\dimen0<\wd0%
+      % 枠に名前が収まらないとき
+      \leavevmode#2\relax%
+      \xdef\@kian@result{1}%
+    \else%
+      % 枠に名前が収まるとき
+      \ifdim\wd0>1\zw%
+        \leavevmode\hbox to\dimen0{\kian@fillkanjiskips#2}%
+        \xdef\@kian@result{0}%
+      \else%
+        \leavevmode\hbox to\dimen0{\kian@fillkanjiskips\hss#2\hss}%
+        \xdef\@kian@result{0}%
+      \fi%
+    \fi%
+  \fi%
+}}%
+% 自然人の場合
+\def\kian@titl@namecore@C[#1]#2#3{{% #1:長さ #2:氏 #3:名
+  % ゼロ以下の場合
+  \ifdim#1pt=\z@%
+    \leavevmode#2#3\relax% 氏名をそのまま
+    \xdef\@kian@result{2}%
+  \else\ifdim#1pt=-1pt%
+    \leavevmode#2\relax% 氏をそのまま表示
+    \xdef\@kian@result{2}%
+  \else\ifdim#1pt=-2pt%
+    \leavevmode#3\relax% 名前をそのまま表示
+    \xdef\@kian@result{2}%
+  % プラスの場合
+  \else\ifdim#1pt<\z@\else%
+    % 長さの設定
+    \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax%
+    \dimen0=#1\dimen0\relax\advance\dimen0 by-\kanjiskip\relax% 氏名枠の長さ
+    \dimen1=.5\dimen0%                                 氏枠の長さ
+    \dimen2=.5\dimen0%                                 名枠の長さ
+    \setbox0=\hbox{\kanjiskip=\z@\xkanjiskip=\z@#2#3}% 氏名の長さ
+    \setbox1=\hbox{\kanjiskip=\z@\xkanjiskip=\z@#2}%   氏の長さ
+    \setbox2=\hbox{\kanjiskip=\z@\xkanjiskip=\z@#3}%   名の長さ
+    % 長さの修正
+    \ifdim\dimen0>2\wd1\else%
+      % 氏が氏名枠の半分以上の場合の修正
+      \dimen1=\wd1%
+      \dimen2=\dimen0\advance\dimen2 by-\dimen1\relax%
+    \fi%
+    \ifdim\dimen0>2\wd2%
+      % 名が氏名枠の半分未満の場合の修正
+      \ifdim\wd1>1\zw\else%
+        % 氏が1文字の場合の修正
+        \ifdim\wd2>2\zw%
+          % 名が2文字より大の場合
+          \advance\dimen1 by-.5\zw%
+          \advance\dimen2 by+.5\zw%
+        \fi%
+      \fi%
+    \else%
+      % 名が氏名枠の半分以上の場合の修正
+      \dimen2=\wd2%
+    \fi%
+    % 氏名を表示
+    \ifdim\dimen0<\wd0%
+      % 氏名枠が氏名未満の場合
+      \leavevmode#2#3\relax%
+      \xdef\@kian@result{1}%
+    \else%
+      % 氏名枠が氏名以上の場合
+      \def\@tempfunc{\kian@fillkanjiskips\skip0=\kanjiskip\divide\skip0 by2\relax}%
+      % 氏の処理
+      \def\@tempfuna{{\hbox to\dimen1{\@tempfunc#2\hskip\skip0}}}%
+      % 名前の処理
+      \ifdim\wd2>1\zw%
+        % 名が2文字以上
+        \ifdim\wd1>1\zw%
+          % 氏が2文字以上
+          \def\@tempfunb{{\hbox to\dimen2{\@tempfunc\hskip\skip0#3}}}%
+        \else%
+          % 氏が1文字
+          \def\@tempfunb{{\hbox to\dimen2{\@tempfunc#3}}}%
+        \fi%
+      \else%
+        % 名が1文字
+        \def\@tempfunb{{\hbox to\dimen2{\hfill\hbox{#3}}}}%
+      \fi%
+      \leavevmode\hbox to\dimen0{\@tempfuna\hss\@tempfunb}%
+      %\leavevmode\hbox to\dimen0{\@tempfuna\hskip\z@ minus1fil\@tempfunb}%
+      \xdef\@kian@result{0}%
+    \fi%
+  \fi\fi\fi\fi%
+}}%
+
+%======================================%
+% 題目
+
+%==================%
+% 幅
+
+\def\kian@subjecthlength#1#2{%
+  \ifx\relax#1\relax\else\edef\@kian@titl@subjecthlengthA{#1}\fi% 全体の字下げ幅
+  \ifx\relax#2\relax\else\edef\@kian@titl@subjecthlengthB{#2}\fi% 題目の幅
+}%
+\kian@subjecthlength%
+ {-1}% 中央寄せ（+X:左寄せからの距離/-1:中央寄せ/-2:右寄せ）
+ {-1}% 題目の幅（-1:自動幅/0:自然幅/+X:幅固定）
+\@ifundefined{subjecthlength}{\let\subjecthlength\kian@subjecthlength}{}%
+
+%==================%
+% 1.0倍の題目
+
+% 使用法：\kian@subjcet{題目}，\kian@subjcet[位置]{題目}
+% 戻り値：0=均等割付けの場合 1=1文字で中央表示の場合
+\def\kian@subject{%
+  \@ifnextchar[{\kian@titl@subject@A}{\kian@titl@subject@A[]}%]
+}%
+\def\kian@titl@subject@A[#1]#2{{%
+  % オプション解析
+  \kian@titl@subject@AA[#1]%
+  % 横の位置
+  \kian@titl@subject@AB%
+  % 表示
+  \kian@titl@subject@B{#2}%
+}}%
+\def\kian@titl@subject@AA[#1]{%
+  % オプション解析
+  \edef\@tempfuna{}% 表示位置
+  \edef\@tempfunb{}% 題目の幅
+  \@tfor\@tempfunc:=#1\do{%
+    \expandafter\expandafter\expandafter\ifx\@tempfunc ,%
+    \else\expandafter\expandafter\expandafter\ifx\@tempfunc l\edef\@tempfuna{0}% 左寄せ
+    \else\expandafter\expandafter\expandafter\ifx\@tempfunc c\edef\@tempfuna{-1}% 中央寄せ
+    \else\expandafter\expandafter\expandafter\ifx\@tempfunc r\edef\@tempfuna{-2}% 右寄せ
+    \else\edef\@tempfunb{\@tempfunb\@tempfunc}% 幅
+    \fi\fi\fi\fi%
+  }%
+  \expandafter\ifx\expandafter\relax\@tempfuna\relax\else%
+    \kian@subjecthlength{\@tempfuna}{}%
+  \fi%
+  \expandafter\ifx\expandafter\relax\@tempfunb\relax\else%
+    \kian@subjecthlength{}{\@tempfunb}%
+  \fi%
+}%
+\def\kian@titl@subject@AB{{%
+  % 横の位置
+  %\leftskip=\z@%
+  \noindent%
+  \ifdim\@kian@titl@subjecthlengthA pt=-2\p@%
+    \hfill% 右寄せ
+  \else\ifdim\@kian@titl@subjecthlengthA pt=-1\p@%
+    \hfil% 中央寄せ
+  \else%
+    \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax\dimen0=\@kian@titl@subjecthlengthA\dimen0\relax%
+    \hskip\dimen0\relax% 文字数指定
+  \fi\fi%
+}}%
+\def\kian@titl@subject@B#1{{% #1:題目
+  \ifdim\@kian@titl@subjecthlengthB pt=\z@%
+    % 自然幅
+    \hbox{#1}%
+    \xdef\@kian@result{0}%
+  \else%
+    \setbox0=\hbox{#1}%
+    \ifdim\@kian@titl@subjecthlengthB pt=-\p@%
+      % 自動幅
+      \dimen0=\wd0\relax%
+      \dimen9=1\zw\relax\advance\dimen9 by\kanjiskip\relax%
+      \ifdim\dimen0<10\dimen9%
+        % 10文字以下の場合は長さを広げる(x+(10-x)/2)
+        \dimen1=10\dimen9\relax%
+        \advance\dimen1 by-\dimen0\relax%
+        \divide\dimen1 by2\relax%
+        \advance\dimen0 by\dimen1\relax%
+      \fi%
+    \else%
+      % 幅固定
+      \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax%
+      \dimen0=\@kian@titl@subjecthlengthB\dimen0\relax\advance\dimen0 by-\kanjiskip\relax%
+    \fi%
+    % 表示
+    \ifdim\wd0>1\zw%
+      \hbox to\dimen0{\kian@fillkanjiskips#1}%
+      \xdef\@kian@result{0}%
+    \else%
+      \hbox to\dimen0{\kian@fillkanjiskips\hss#1\hss}%
+      \xdef\@kian@result{1}%
+    \fi%
+  \fi%
+  \nopagebreak%
+  %\par%
+}}%
+\@ifundefined{subject}{\let\subject\kian@subject}{}%
+\@ifundefined{Sub}{\let\Sub\kian@subject}{}%
+
+%==================%
+% 1.5倍の題目
+
+% 使用法：\kian@Subjcet{題目}，\kian@Subjcet[位置]{題目}
+% 戻り値：0=均等割付けの場合 1=1文字で中央表示の場合
+\def\kian@Subject{%
+  \@ifnextchar[{\kian@titl@Subject@A}{\kian@titl@Subject@A[]}%
+}%
+\def\kian@titl@Subject@A[#1]#2{{% #1:オプション #2:題目
+  % 縦の位置
+  \vskip\baselineskip\vglue-\baselineskip%
+  \setbox0=\hbox{\Large□}%"
+  \setbox1=\hbox{□}%"
+  \dimen0=\z@%
+  \advance\dimen0 by+\ht0\relax%\advance\dimen0 by+\dp0\relax%
+  \advance\dimen0 by-\ht1\relax%\advance\dimen0 by-\dp1\relax%
+  \divide\dimen0 by2\relax%
+  \vskip\dimen0%
+  % オプション解析
+  \kian@titl@subject@AA[#1]%
+  % 横の位置
+  \kian@titl@subject@AB%
+  % 表示
+  {\Large\kian@titl@subject@B{#2}}%
+  % 縦の位置
+  \vskip-\dimen0%
+}}%
+\@ifundefined{Subject}{\let\Subject\kian@Subject}{}%
+\@ifundefined{SUB}{\let\SUB\kian@Subject}{}%
+
+%==================%
+% 題目の核心
+
+
+%======================================%
+% 暦の定義
+
+% 西暦の定義
+\newif\ifwesterncalender%
+\westerncalenderfalse%
+
+% 和暦の定義
+\newif\ifjapanesecalender%
+\japanesecalenderfalse%
+
+% 使用法：\westerncalender
+\def\westerncalender{\westerncalendertrue\japanesecalenderfalse}%
+
+% 使用法：\japanesecalender
+\def\japanesecalender{\westerncalenderfalse\japanesecalendertrue}%
+
+% 使用法：\doublecalender
+\def\doublecalender{\westerncalenderfalse\japanesecalenderfalse}%
+
+% 和暦の原則
+\japanesecalender%
+
+%======================================%
+% 日付の表示
+
+%==================%
+% 入力データを整形
+
+% 日付を維持
+\def\kian@year{\the\year}%
+\def\kian@month{\the\month}%
+\def\kian@day{\the\day}%
+
+% 使用法：\kian@arrangedate{元記号年.月.日}, \kian@arrangedate{年.月.日}
+%         \kian@arrangedate*{元記号年.月.日}, \kian@arrangedate*{年.月.日}
+\def\kian@arrangedate{%
+  \@ifstar{\kian@titl@arrangedate@A{Y}}{\kian@titl@arrangedate@A{N}}%
+}%
+\def\kian@titl@arrangedate@A#1{% #1:幅揃え（Y/N)
+  \@ifnextchar[{\kian@titl@arrangedate@B{#1}}{\kian@titl@arrangedate@B{#1}[0]}%]
+}%
+\def\kian@titl@arrangedate@B#1[#2]#3{{% #1:幅揃え（Y/N） #2:ずらす日数 #3:年月日
+  % 年月日を分離
+  \@tempcnta=0%
+  \def\@tempfuna{}\def\@tempfunb{}\def\@tempfunc{}%
+  \expandafter\@tfor\expandafter\@tempfund\expandafter:\expandafter=#3\do{%
+    \expandafter\ifx\@tempfund.%
+      \advance\@tempcnta by1{}%
+    \else%
+      \ifcase\@tempcnta%
+        \edef\@tempfuna{\@tempfuna\@tempfund}\or%
+        \edef\@tempfunb{\@tempfunb\@tempfund}\else%
+        \edef\@tempfunc{\@tempfunc\@tempfund}\fi%
+    \fi%
+  }%
+  % 計算用の年月日を用意
+  \edef\@tempfund{\@tempfuna}\edef\@tempfune{\@tempfunb}\edef\@tempfunf{\@tempfunc}%
+  \expandafter\ifx\expandafter\relax\@tempfuna\relax\edef\@tempfund{1}\fi%
+  \expandafter\ifx\expandafter\relax\@tempfunb\relax\edef\@tempfune{1}\fi%
+  \expandafter\ifx\expandafter\relax\@tempfunc\relax\edef\@tempfunf{1}\fi%
+  \expandafter\ifx\expandafter=\@tempfuna\edef\@tempfund{\kian@year}\fi%  同年
+  \expandafter\ifx\expandafter=\@tempfunb\edef\@tempfune{\kian@month}\fi% 同月
+  \expandafter\ifx\expandafter=\@tempfunc\edef\@tempfunf{\kian@day}\fi%   同日
+  \expandafter\ifx\expandafter+\@tempfuna\edef\@tempfund{\kian@year}\fi%  ＿年
+  \expandafter\ifx\expandafter+\@tempfunb\edef\@tempfune{\kian@month}\fi% ＿月
+  \expandafter\ifx\expandafter+\@tempfunc\edef\@tempfunf{\kian@day}\fi%   ＿日
+  \expandafter\ifx\expandafter-\@tempfuna\edef\@tempfund{\kian@year}\fi%    年
+  \expandafter\ifx\expandafter-\@tempfunb\edef\@tempfune{\kian@month}\fi%   月
+  \expandafter\ifx\expandafter-\@tempfunc\edef\@tempfunf{\kian@day}\fi%     日
+  \expandafter\ifx\expandafter/\@tempfuna\edef\@tempfund{\kian@year}\fi%  (空)
+  \expandafter\ifx\expandafter/\@tempfunb\edef\@tempfune{\kian@month}\fi% (空)
+  \expandafter\ifx\expandafter/\@tempfunc\edef\@tempfunf{\kian@day}\fi%   (空)
+  \expandafter\kian@titl@arrangedate@C\expandafter#1\expandafter[\expandafter#2\expandafter]%
+    \@tempfund.\@tempfune.\@tempfunf/\@tempfuna.\@tempfunb.\@tempfunc\@nil%
+}}%
+\def\kian@titl@arrangedate@C#1[#2]#3#4.#5.#6/#7.#8.#9\@nil{{% #1:幅揃え（Y/N） #2:ずらす日数 #3:元号記号 #4-6:年月日 #7-9:表示法
+  % 和歴は西暦に変換（※ 改元時要変更）
+  \expandafter\ifx\kian@gengo@char@A#3\@tempcnta=#4\advance\@tempcnta by\kian@gengodiff@A{}\else%
+  \expandafter\ifx\kian@gengo@char@B#3\@tempcnta=#4\advance\@tempcnta by\kian@gengodiff@B{}\else%
+  \expandafter\ifx\kian@gengo@char@C#3\@tempcnta=#4\advance\@tempcnta by\kian@gengodiff@C{}\else%
+  \expandafter\ifx\kian@gengo@char@D#3\@tempcnta=#4\advance\@tempcnta by\kian@gengodiff@D{}\else%
+  \expandafter\ifx\kian@gengo@char@E#3\@tempcnta=#4\advance\@tempcnta by\kian@gengodiff@E{}\else%
+  \expandafter\ifx\kian@gengo@char@F#3\@tempcnta=#4\advance\@tempcnta by\kian@gengodiff@F{}\else%
+  \expandafter\ifx\kian@gengo@char@G#3\@tempcnta=#4\advance\@tempcnta by\kian@gengodiff@G{}\else%
+  \expandafter\ifx\kian@gengo@char@H#3\@tempcnta=#4\advance\@tempcnta by\kian@gengodiff@H{}\else%
+  \@tempcnta=#3#4\fi\fi\fi\fi\fi\fi\fi\fi%
+  % 次へ
+  \kian@titl@arrangedate@D#1[#2]\the\@tempcnta.#5.#6/#7.#8.#9\@nil%
+}}%
+\def\kian@titl@arrangedate@D#1[#2]#3.#4.#5/#6.#7.#8\@nil{{% #1:幅揃え（Y/N） #2:ずらす日数 #3:年（西暦） #4:月 #5:日 #6:閏年 #7-9:表示法
+  % 準備
+  \@tempcnta=#3\advance\@tempcnta by0% 年（西暦）
+  \@tempcntb=#4\advance\@tempcntb by0% 月
+  \@tempcntc=#5\advance\@tempcntc by0% 日
+  % 日数ずらす
+  \advance\@tempcntc by#2%
+  % 修正
+  \@tempcntd=0%
+  \loop\ifnum\@tempcntd=0%
+    % 閏年の確認
+    \begingroup%
+      \xdef\@kian@titl@leapyear{N}%
+      \@tempcntb=\@tempcnta\@tempcntc=\@tempcnta%
+      \divide\@tempcntc by4\multiply\@tempcntc by4%
+      \advance\@tempcntb by-\@tempcntc{}%
+      \ifnum\@tempcntb>0\xdef\@kian@titl@leapyear{N}\else% 4で割り切れない年は平年
+        \@tempcntb=\@tempcnta\@tempcntc=\@tempcnta%
+        \divide\@tempcntc by100\multiply\@tempcntc by100%
+        \advance\@tempcntb by-\@tempcntc{}%
+        \ifnum\@tempcntb>0\xdef\@kian@titl@leapyear{Y}\else% 100で割り切れない年は閏年
+          \@tempcntb=\@tempcnta\@tempcntc=\@tempcnta%
+          \divide\@tempcntc by400\multiply\@tempcntc by400%
+          \advance\@tempcntb by-\@tempcntc{}%
+          \ifnum\@tempcntb>0\xdef\@kian@titl@leapyear{N}\else% 400で割り切れない年は平年
+            \xdef\@kian@titl@leapyear{Y}\fi\fi\fi% 400で割り切れる年は閏年
+    \endgroup%
+    % 下方修正
+    \ifnum\@tempcntb=12\ifnum\@tempcntc<1\@tempcntb=11\advance\@tempcntc by30{}\fi\fi%
+    \ifnum\@tempcntb=11\ifnum\@tempcntc<1\@tempcntb=10\advance\@tempcntc by31{}\fi\fi%
+    \ifnum\@tempcntb=10\ifnum\@tempcntc<1\@tempcntb=9\advance\@tempcntc by30{}\fi\fi%
+    \ifnum\@tempcntb=9\ifnum\@tempcntc<1\@tempcntb=8\advance\@tempcntc by31{}\fi\fi%
+    \ifnum\@tempcntb=8\ifnum\@tempcntc<1\@tempcntb=7\advance\@tempcntc by31{}\fi\fi%
+    \ifnum\@tempcntb=7\ifnum\@tempcntc<1\@tempcntb=6\advance\@tempcntc by30{}\fi\fi%
+    \ifnum\@tempcntb=6\ifnum\@tempcntc<1\@tempcntb=5\advance\@tempcntc by31{}\fi\fi%
+    \ifnum\@tempcntb=5\ifnum\@tempcntc<1\@tempcntb=4\advance\@tempcntc by30{}\fi\fi%
+    \ifnum\@tempcntb=4\ifnum\@tempcntc<1\@tempcntb=3\advance\@tempcntc by31{}\fi\fi%
+    \ifnum\@tempcntb=3\ifnum\@tempcntc<1\@tempcntb=2\expandafter\ifx\@kian@titl@leapyear Y%
+      \advance\@tempcntc by29{}\else\advance\@tempcntc by28{}\fi\fi\fi%
+    \ifnum\@tempcntb=2\ifnum\@tempcntc<1\@tempcntb=1\advance\@tempcntc by31{}\fi\fi%
+    \ifnum\@tempcntb=1\ifnum\@tempcntc<1\@tempcntb=0\advance\@tempcntc by31{}\fi\fi%
+    \ifnum\@tempcntb=0\advance\@tempcnta by-1{}\@tempcntb=12\fi%
+    % 上方修正
+    \ifnum\@tempcntb=1\ifnum\@tempcntc>31\@tempcntb=2\advance\@tempcntc by-31{}\fi\fi%
+    \ifnum\@tempcntb=2\expandafter\ifx\@kian@titl@leapyear Y%
+      \ifnum\@tempcntc>29\@tempcntb=3\advance\@tempcntc by-29{}\fi\else%
+      \ifnum\@tempcntc>28\@tempcntb=3\advance\@tempcntc by-28{}\fi\fi\fi%
+    \ifnum\@tempcntb=3\ifnum\@tempcntc>31\@tempcntb=4\advance\@tempcntc by-31\fi\fi%
+    \ifnum\@tempcntb=4\ifnum\@tempcntc>30\@tempcntb=5\advance\@tempcntc by-30\fi\fi%
+    \ifnum\@tempcntb=5\ifnum\@tempcntc>31\@tempcntb=6\advance\@tempcntc by-31{}\fi\fi%
+    \ifnum\@tempcntb=6\ifnum\@tempcntc>30\@tempcntb=7\advance\@tempcntc by-30{}\fi\fi%
+    \ifnum\@tempcntb=7\ifnum\@tempcntc>31\@tempcntb=8\advance\@tempcntc by-31{}\fi\fi%
+    \ifnum\@tempcntb=8\ifnum\@tempcntc>31\@tempcntb=9\advance\@tempcntc by-31{}\fi\fi%
+    \ifnum\@tempcntb=9\ifnum\@tempcntc>30\@tempcntb=10\advance\@tempcntc by-30{}\fi\fi%
+    \ifnum\@tempcntb=10\ifnum\@tempcntc>31\@tempcntb=11\advance\@tempcntc by-31{}\fi\fi%
+    \ifnum\@tempcntb=11\ifnum\@tempcntc>30\@tempcntb=12\advance\@tempcntc by-30{}\fi\fi%
+    \ifnum\@tempcntb=12\ifnum\@tempcntc>31\@tempcntb=13\advance\@tempcntc by-31{}\fi\fi%
+    \ifnum\@tempcntb=13\advance\@tempcnta by1{}\@tempcntb=1\fi%
+    % 確認
+    \ifnum\@tempcntb=1\ifnum\@tempcntc>0\ifnum\@tempcntc<32\@tempcntd=1\fi\fi\fi%
+    \ifnum\@tempcntb=2\ifnum\@tempcntc>0\expandafter\ifx\@kian@titl@leapyear Y%
+      \ifnum\@tempcntc<30\@tempcntd=1\fi\else%
+      \ifnum\@tempcntc<29\@tempcntd=1\fi\fi%
+    \fi\fi%
+    \ifnum\@tempcntb=3\ifnum\@tempcntc>0\ifnum\@tempcntc<32\@tempcntd=1\fi\fi\fi%
+    \ifnum\@tempcntb=4\ifnum\@tempcntc>0\ifnum\@tempcntc<31\@tempcntd=1\fi\fi\fi%
+    \ifnum\@tempcntb=5\ifnum\@tempcntc>0\ifnum\@tempcntc<32\@tempcntd=1\fi\fi\fi%
+    \ifnum\@tempcntb=6\ifnum\@tempcntc>0\ifnum\@tempcntc<31\@tempcntd=1\fi\fi\fi%
+    \ifnum\@tempcntb=7\ifnum\@tempcntc>0\ifnum\@tempcntc<32\@tempcntd=1\fi\fi\fi%
+    \ifnum\@tempcntb=8\ifnum\@tempcntc>0\ifnum\@tempcntc<32\@tempcntd=1\fi\fi\fi%
+    \ifnum\@tempcntb=9\ifnum\@tempcntc>0\ifnum\@tempcntc<31\@tempcntd=1\fi\fi\fi%
+    \ifnum\@tempcntb=10\ifnum\@tempcntc>0\ifnum\@tempcntc<32\@tempcntd=1\fi\fi\fi%
+    \ifnum\@tempcntb=11\ifnum\@tempcntc>0\ifnum\@tempcntc<31\@tempcntd=1\fi\fi\fi%
+    \ifnum\@tempcntb=12\ifnum\@tempcntc>0\ifnum\@tempcntc<32\@tempcntd=1\fi\fi\fi%
+  \repeat%
+  % 次へ
+  \kian@titl@arrangedate@E#1[-]\@tempcnta.\@tempcntb.\@tempcntc/#6.#7.#8\@nil%
+}}%
+\def\kian@titl@arrangedate@E#1[#2]#3.#4.#5/#6.#7.#8\@nil{{% #1:幅揃え（Y/N） #3:年（西暦） #4:月 #5:日 #6-8:表示法
+  % 日付を保存
+  \global\edef\kian@year{\the#3}%
+  \global\edef\kian@month{\the#4}%
+  \global\edef\kian@day{\the#5}%
+  % 準備
+  \@tempcnta=#3\advance\@tempcnta by0% 年（西暦）
+  \@tempcntb=#4\advance\@tempcntb by0% 月
+  \@tempcntc=#5\advance\@tempcntc by0% 日
+  % 和暦の準備
+  \@tempcntd=#3%
+  \@tempcnte=#3\multiply\@tempcnte by100{}%
+  \advance\@tempcnte by#4\multiply\@tempcnte by100{}%
+  \advance\@tempcnte by#5{}%
+  % （※ 改元時要変更）
+  \ifnum\@tempcnte<\kian@kaigenbi@B\def\@tempfung{\kian@gengo@A}\advance\@tempcntd by-\kian@gengodiff@A{}\else% 明治
+  \ifnum\@tempcnte<\kian@kaigenbi@C\def\@tempfung{\kian@gengo@B}\advance\@tempcntd by-\kian@gengodiff@B{}\else% 大正
+  \ifnum\@tempcnte<\kian@kaigenbi@D\def\@tempfung{\kian@gengo@C}\advance\@tempcntd by-\kian@gengodiff@C{}\else% 昭和
+  \ifnum\@tempcnte<\kian@kaigenbi@E\def\@tempfung{\kian@gengo@D}\advance\@tempcntd by-\kian@gengodiff@D{}\else% 平成
+  \ifnum\@tempcnte<\kian@kaigenbi@F\def\@tempfung{\kian@gengo@E}\advance\@tempcntd by-\kian@gengodiff@E{}\else% 令和
+  \ifnum\@tempcnte<\kian@kaigenbi@G\def\@tempfung{\kian@gengo@F}\advance\@tempcntd by-\kian@gengodiff@F{}\else% ＦＦ
+  \ifnum\@tempcnte<\kian@kaigenbi@H\def\@tempfung{\kian@gengo@G}\advance\@tempcntd by-\kian@gengodiff@G{}\else% ＧＧ
+  \ifnum\@tempcnte<\kian@kaigenbi@I\def\@tempfung{\kian@gengo@H}\advance\@tempcntd by-\kian@gengodiff@H{}\else% ＨＨ
+  \def\@tempfung{\kian@gengo@I}\fi\fi\fi\fi\fi\fi\fi\fi% ＩＩ
+  % 表示
+  \ifnum\@tempcntd=1%
+    \kian@titl@arrangedate@FA{#1}{\the#3}{\@tempfung}{元}{#6}\else%"元
+    \kian@titl@arrangedate@FA{#1}{\the#3}{\@tempfung}{\the\@tempcntd}{#6}\fi%
+  \kian@titl@arrangedate@FB{#1}{\the#4}{#7}%
+  \kian@titl@arrangedate@FC{#1}{\the#5}{#8}%
+  % 最後が空白の場合の空白の調整（後ろがローマ字の場合にずれるので注意）
+  \expandafter\ifx\expandafter/#8\relax%
+    \hskip\kanjiskip\relax%
+  \else\expandafter\ifx\expandafter/#7\relax%
+    \expandafter\ifx\expandafter\relax#8\relax%
+      \hskip\kanjiskip\relax%
+    \fi%
+  \else\expandafter\ifx\expandafter/#6\relax%
+    \expandafter\ifx\expandafter\relax#7\relax%
+      \expandafter\ifx\expandafter\relax#8\relax%
+        \hskip\kanjiskip\relax%
+      \fi%
+    \fi%
+  \fi\fi\fi%
+}}%
+\def\kian@titl@arrangedate@FA#1#2#3#4#5{{% #1:幅揃え（Y/N） #2:年（西暦） #3:元号 #4:年（和暦） #5:表示法
+  \if#1Y%
+    \xkanjiskip=\kanjiskip%
+    \advance\xkanjiskip by+.5\zw\relax%
+    \setbox0=\hbox{0}\advance\xkanjiskip by-.5\wd0\relax%
+  \fi%
+  \ifwesterncalender%
+    % 西暦
+    \kian@titl@arrangedate@FAA{#1}{#2}{#3}{#4}{#5}%
+  \else\ifjapanesecalender%
+    % 和暦
+    \kian@titl@arrangedate@FAB{#1}{#2}{#3}{#4}{#5}%
+  \else%
+    % 両暦
+    \kian@titl@arrangedate@FAA{#1}{#2}{#3}{#4}{#5}%
+    \expandafter\ifx\expandafter/#5\relax%
+      \ifx#1Y\hskip1\zw\fi%
+      %\ifx#1Y\hskip1\zw\hskip2\kanjiskip\fi%
+    \else\expandafter\ifx\expandafter\relax#5\relax%
+      \relax%
+    \else%
+      {（}%"（
+    \fi\fi%
+    \kian@titl@arrangedate@FAB{#1}{#2}{#3}{#4}{#5}%
+    \expandafter\ifx\expandafter/#5\relax%
+      \ifx#1Y%
+        % 幅揃えの場合の空白の調整
+        \hskip1\zw\hskip\kanjiskip%
+        %\@settodim\wd{\dimen0}{{）}0}%"）
+        %\@settodim\wd{\dimen1}{{全}0}%"全
+        %\hskip-\dimen1\hskip\dimen0\relax%
+      \fi%
+    \else\expandafter\ifx\expandafter\relax#5\relax%
+      \relax%
+    \else%
+      {）}%"）
+      \ifx#1Y%
+        % 幅揃えの場合の空白の調整
+        %\@settodim\wd{\dimen0}{{）}0}%"）
+        %\@settodim\wd{\dimen1}{{全}0}%"全
+        %\hskip-\dimen1\hskip\dimen0\relax%
+      \fi%
+    \fi\fi%
+  \fi\fi%
+}}%
+\def\kian@titl@arrangedate@FAA#1#2#3#4#5{{% #1:幅揃え（Y/N） #2:年（西暦） #3:元号 #4:年（和暦） #5:表示法
+  \if#1Y%
+    \dimen9=\xkanjiskip%
+    \xkanjiskip=\kanjiskip%
+    \advance\xkanjiskip by+.5\zw\relax%
+    \setbox0=\hbox{0}\advance\xkanjiskip by-.5\wd0\relax%
+  \fi%
+  % 準備
+  \@settodim\wd{\dimen0}{0000}\divide\dimen0 by2\relax\advance\dimen0 by\xkanjiskip\relax%
+  \setbox0=\hbox{#2}%
+  \setbox1=\hbox{同}%"同
+  \setbox2=\hbox{年}%"年
+  % 表示
+  \expandafter\ifx\expandafter=#5\relax%
+    % 同年
+    \ifx#1Y%
+      \ifvmode\leavevmode\hskip-\xkanjiskip\fi%
+        \advance\dimen0 by-.5\wd1\relax\hskip\dimen0{\box1}\hskip\dimen0{\box2}\else% 同年
+      \leavevmode%
+        {\box1}{\box2}\fi% 同年
+  \else\expandafter\ifx\expandafter+#5\relax%
+    % ＿年
+    \@settodim\wd{\dimen0}{0000}\advance\dimen0 by\xkanjiskip%
+    \ifvmode\leavevmode\else\advance\dimen0 by\xkanjiskip\fi%
+    \hbox to\dimen0{\underline{\hskip\dimen0}}\box2%
+  \else\expandafter\ifx\expandafter-#5\relax%
+    %   年
+    \@settodim\wd{\dimen0}{0000}\advance\dimen0 by\xkanjiskip%
+    \ifvmode\leavevmode\else\advance\dimen0 by\xkanjiskip\fi%
+    \hskip\dimen0\box2%
+  \else\expandafter\ifx\expandafter/#5\relax%
+    % (空)
+    \ifx#1Y%
+      \ifvmode\leavevmode\hskip-\xkanjiskip\fi%
+      \hskip\dimen0\hskip\wd1\hskip\dimen0%
+    \fi%
+  \else\expandafter\ifx\expandafter\relax#5\relax%
+    % （非表示）
+    \relax%
+  \else%
+    % 通常
+    \ifx#1Y%
+      \ifvmode\leavevmode\hskip-\xkanjiskip\fi%
+        \advance\dimen0 by-.5\wd0\relax\hskip\dimen0{\box0}\hskip\dimen0{\box2}\else% XXXX年
+      \leavevmode%
+        {\box0}{\box2}\fi% XXXX年
+  \fi\fi\fi\fi\fi%
+}}%
+\def\kian@titl@arrangedate@FAB#1#2#3#4#5{{% #1:幅揃え（Y/N） #2:年（西暦） #3:元号 #4:年（和暦） #5:表示法
+  \if#1Y%
+    \xkanjiskip=\kanjiskip%
+    \advance\xkanjiskip by+.5\zw\relax%
+    \setbox0=\hbox{0}\advance\xkanjiskip by-.5\wd0\relax%
+  \fi%
+  % 準備
+  \@settodim\wd{\dimen0}{00}\divide\dimen0 by2\relax\advance\dimen0 by\xkanjiskip\relax%
+  \setbox0=\hbox{#4}%
+  \setbox1=\hbox{同}%"同
+  \setbox2=\hbox{年}%"年
+  \setbox3=\hbox{#3}%
+  % 表示
+  \expandafter\ifx\expandafter=#5\relax%
+    % 同年
+    \ifx#1Y%
+      \ifvmode\leavevmode\else\hskip\kanjiskip\fi%
+        \hskip1\zw\hskip\kanjiskip{\box1}\hskip2\dimen0{年}\else% 同年
+      \ifvmode\leavevmode\fi%
+        {\box1}{年}\fi% 同年
+  \else\expandafter\ifx\expandafter+#5\relax%
+    % 元号＿年
+    \ifvmode\leavevmode\fi%
+    \box3\hbox to2\dimen0{\underline{\hskip2\dimen0}}\box2%
+  \else\expandafter\ifx\expandafter-#5\relax%
+    % 元号  年
+    \ifvmode\leavevmode\fi%
+    \box3\hskip2\dimen0\box2%
+  \else\expandafter\ifx\expandafter/#5\relax%
+    % (空)
+    \ifx#1Y%
+      \ifvmode\leavevmode\else\hskip\kanjiskip\fi%
+      \hskip\wd3\hskip2\dimen0\hskip\wd2%
+    \fi%
+  \else\expandafter\ifx\expandafter\relax#5\relax%
+    % （非表示）
+    \relax%
+  \else%
+    % 通常
+    \ifx#1Y%
+      \leavevmode\advance\dimen0 by-.5\wd0\relax#3\hskip\dimen0{\box0}\hskip\dimen0{年}\else% 元号XX年
+      \leavevmode#3{\box0}{年}\fi% 元号XX年
+  \fi\fi\fi\fi\fi%
+}}%
+\def\kian@titl@arrangedate@FB#1#2#3{{% #1:幅揃え（Y/N） #2:月数 #3:表示法
+  \if#1Y%
+    \xkanjiskip=\kanjiskip%
+    \advance\xkanjiskip by+.5\zw\relax%
+    \setbox0=\hbox{0}\advance\xkanjiskip by-.5\wd0\relax%
+  \fi%
+  % 準備
+  \@settodim\wd{\dimen0}{00}\divide\dimen0 by2\relax\advance\dimen0 by\xkanjiskip\relax%
+  \setbox0=\hbox{#2}%
+  \setbox1=\hbox{同}%"同
+  \setbox2=\hbox{月}%"月
+  % 表示
+  \expandafter\ifx\expandafter=#3\relax%
+    % 同月
+    \ifx#1Y%
+      \ifvmode\leavevmode\hskip-\xkanjiskip\fi%
+        \advance\dimen0 by-.5\wd1\relax\hskip\dimen0{\box1}\hskip\dimen0{\box2}\else% 同月
+      \leavevmode%
+        {\box1}{\box2}\fi% 同月
+  \else\expandafter\ifx\expandafter+#3\relax%
+    % ＿月
+    \ifvmode\leavevmode\hskip-\xkanjiskip\fi%
+    \hbox to2\dimen0{\underline{\hskip2\dimen0}}\box2%
+  \else\expandafter\ifx\expandafter-#3\relax%
+    %   月
+    \ifvmode\leavevmode\hskip-\xkanjiskip\fi%
+    \hskip2\dimen0\box2%
+  \else\expandafter\ifx\expandafter/#3\relax%
+    % (空)
+    \ifx#1Y%
+      \ifvmode\leavevmode\hskip-\xkanjiskip\fi%
+      \hskip2\dimen0\hskip\wd2%
+    \fi%
+  \else\expandafter\ifx\expandafter\relax#3\relax%
+    % （非表示）
+    \relax%
+  \else%
+    % 通常
+    \ifx#1Y%
+      \ifvmode\leavevmode\hskip-\xkanjiskip\fi%
+        \advance\dimen0 by-.5\wd0\relax\hskip\dimen0{\box0}\hskip\dimen0{\box2}\else% XX月
+      \leavevmode%
+        {\box0}{\box2}\fi% XX月
+  \fi\fi\fi\fi\fi%
+}}%
+\def\kian@titl@arrangedate@FC#1#2#3{{% #1:幅揃え（Y/N） #2:日数 #3:表示法
+  \if#1Y%
+    \xkanjiskip=\kanjiskip%
+    \advance\xkanjiskip by+.5\zw\relax%
+    \setbox0=\hbox{0}\advance\xkanjiskip by-.5\wd0\relax%
+  \fi%
+  % 準備
+  \@settodim\wd{\dimen0}{00}\divide\dimen0 by2\relax\advance\dimen0 by\xkanjiskip\relax%
+  \setbox0=\hbox{#2}%
+  \setbox1=\hbox{同}%"同
+  \setbox2=\hbox{日}%"日
+  % 表示
+  \expandafter\ifx\expandafter=#3\relax%
+    % 同日
+    \ifx#1Y%
+      \ifvmode\leavevmode\hskip-\xkanjiskip\fi%
+        \advance\dimen0 by-.5\wd1\relax\hskip\dimen0{\box1}\hskip\dimen0{\box2}\else% 同日
+      \leavevmode%
+        {\box1}{\box2}\fi% 同日
+  \else\expandafter\ifx\expandafter+#3\relax%
+    % ＿日
+    \ifvmode\leavevmode\hskip-\xkanjiskip\fi%
+    \hbox to2\dimen0{\underline{\hskip2\dimen0}}\box2%
+  \else\expandafter\ifx\expandafter-#3\relax%
+    %   日
+    \ifvmode\leavevmode\hskip-\xkanjiskip\fi%
+    \hskip2\dimen0\box2%
+  \else\expandafter\ifx\expandafter/#3\relax%
+    % (空)
+    \ifx#1Y%
+      \ifvmode\leavevmode\hskip-\xkanjiskip\fi%
+      \hskip2\dimen0\hskip\wd2%
+    \fi%
+  \else\expandafter\ifx\expandafter\relax#3\relax%
+    % （非表示）
+    \relax%
+  \else%
+    % XX日
+    \ifx#1Y%
+      \ifvmode\leavevmode\hskip-\xkanjiskip\fi%
+        \advance\dimen0 by-.5\wd0\relax\hskip\dimen0{\box0}\hskip\dimen0{\box2}\else% XX日
+      \leavevmode%
+        {\box0}{\box2}\fi% XX日
+  \fi\fi\fi\fi\fi%
+}}%
+\@ifundefined{arrangedate}{\let\arrangedate\kian@arrangedate}{}%
+\@ifundefined{Ada}{\let\Ada\kian@arrangedate}{}%
+
+%==================%
+% 今日の日付
+
+% 使用法:\kian@today[ずらす日数]{年月日}, \kian@today*[ずらす日数]{年月日}
+\def\kian@today{%
+  \@ifstar{\kian@titl@today@A{Y}}{\kian@titl@today@A{N}}%
+}%
+\def\kian@titl@today@A#1{% 1:幅揃え(Y/N)
+  \@ifnextchar[{\kian@titl@today@B{#1}}{\kian@titl@today@B{#1}[0]}%]
+}%
+\def\kian@titl@today@B#1[#2]{{% 1:幅揃え(Y/N) 2:ずらす日数 3:年月日
+  \kian@titl@arrangedate@C#1[#2]\the\year.\the\month.\the\day/\the\year.\the\month.\the\day\@nil%
+}}%
+\let\todayorig\today%
+\let\today\kian@today%
+
+%==================%
+% 数字を下線付きの空白にした日付
+
+% 使用法:\kian@blankdate, \kian@blankdate*
+\def\kian@blankdate{%
+  \@ifstar{\kian@blankdate@A[*]}{\kian@blankdate@A[-]}%
+}%
+\def\kian@blankdate@A[#1]{{%
+  \@tempcntb=\year\multiply\@tempcntb by100{}%
+  \advance\@tempcntb by\month\multiply\@tempcntb by100{}%
+  \advance\@tempcntb by\day{}%
+  \@tempcnta=\year{}%
+  % （※ 改元時要変更）
+  \ifnum\@tempcntb<\kian@kaigenbi@B\def\@tempfuna{\kian@gengo@A}\advance\@tempcnta by-\kian@gengodiff@A\else%"明"治
+  \ifnum\@tempcntb<\kian@kaigenbi@C\def\@tempfuna{\kian@gengo@B}\advance\@tempcnta by-\kian@gengodiff@B\else%"大"正
+  \ifnum\@tempcntb<\kian@kaigenbi@D\def\@tempfuna{\kian@gengo@C}\advance\@tempcnta by-\kian@gengodiff@C\else%"昭"和
+  \ifnum\@tempcntb<\kian@kaigenbi@E\def\@tempfuna{\kian@gengo@D}\advance\@tempcnta by-\kian@gengodiff@D\else%"平"成
+  \ifnum\@tempcntb<\kian@kaigenbi@F\def\@tempfuna{\kian@gengo@E}\advance\@tempcnta by-\kian@gengodiff@E\else%"令"和
+  \ifnum\@tempcntb<\kian@kaigenbi@G\def\@tempfuna{\kian@gengo@F}\advance\@tempcnta by-\kian@gengodiff@F\else%"Ｆ"Ｆ
+  \ifnum\@tempcntb<\kian@kaigenbi@H\def\@tempfuna{\kian@gengo@G}\advance\@tempcnta by-\kian@gengodiff@G\else%"Ｇ"Ｇ
+  \ifnum\@tempcntb<\kian@kaigenbi@I\def\@tempfuna{\kian@gengo@H}\advance\@tempcnta by-\kian@gengodiff@H\else%"Ｈ"Ｈ
+  \fi\fi\fi\fi\fi\fi\fi\fi\relax%
+  \ifnum\@tempcnta=1\setbox1=\hbox{{元}}\else\setbox1=\hbox{\the\@tempcnta}\fi%"元
+  \ifx#1*%
+    \ifwesterncalender%
+      {\the\year}{年}%"年 XXXX年
+    \else\ifjapanesecalender%
+      {\@tempfuna}{\box1}{年}%"年 元号XX年
+    \else%
+      {\the\year}{年}%"年 XXXX年
+      {（}{\@tempfuna}{\box1}{年}{）}%"（"年"） （元号XX年）
+    \fi\fi%
+  \else%
+    \ifwesterncalender%
+      \ifvmode\else\hskip\kanjiskip\fi\underline{\hskip4\zw\hskip3\kanjiskip}\hskip\kanjiskip{年}%"年 ____年
+    \else\ifjapanesecalender%
+      {\@tempfuna}\hskip\kanjiskip\underline{\hskip2\zw\hskip\kanjiskip}\hskip\kanjiskip{年}%"年 元号__年
+    \else%
+      \ifvmode\else\hskip\kanjiskip\fi\underline{\hskip4\zw\hskip3\kanjiskip}\hskip\kanjiskip{年}%"年 ____年
+      {（}%"（
+      {\@tempfuna}\hskip\kanjiskip\underline{\hskip2\zw\hskip\kanjiskip}\hskip\kanjiskip{年}%"年 元号__年
+      {）}%"）
+    \fi\fi%
+  \fi%
+  \hskip\kanjiskip\underline{\hskip2\zw\hskip\kanjiskip}\hskip\kanjiskip{月}%"月 __月
+  \hskip\kanjiskip\underline{\hskip2\zw\hskip\kanjiskip}\hskip\kanjiskip{日}%"日 __日
+}}%
+\@ifundefined{blankdate}{\let\blankdate\kian@blankdate}{}%
+
+%======================================%
+% 均等割付け
+
+% 使用法：\kian@justify{文字列}, \kian@justify[幅]{文字列}
+% 戻り値：0=均等割付けの場合 1=文字列が1文字の場合 2=文字列が長すぎる場合
+\def\kian@justify{%
+  \@ifnextchar[{\kian@titl@justify@A}{\kian@titl@justify@A[-]}%]
+}%
+\def\kian@titl@justify@A[#1]#2{{%
+  % 枠の用意
+  \ifx-#1%
+    % 枠の大きさの指定がない場合（間を1文字分にする。）
+    \setbox0=\hbox{#2}\dimen0=\wd0\relax\multiply\dimen0 by2\relax\advance\dimen0 by-1\zw\relax%
+  \else%
+    % 枠の大きさの指定がある場合
+    \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax\dimen0=#1\dimen0\relax\advance\dimen0 by-\kanjiskip%
+  \fi%
+  % 文字列の長さの測定
+  \setbox0=\hbox{#2}%
+  % 表示
+  \ifdim\dimen0<\wd0%
+    % 収まり切らない場合
+    \leavevmode#2\relax%
+    \xdef\@kian@result{2}%
+  \else%
+    % 収まり切る場合
+    \ifdim\wd0>1\zw%
+      % 均等割付けの場合
+      \leavevmode\hbox to\dimen0{\kian@fillkanjiskips#2}%
+      \xdef\@kian@result{0}%
+    \else%
+      % 1文字の場合
+      \leavevmode\hbox to\dimen0{\kian@fillkanjiskips\hss#2\hss}% 中央に配置
+      \xdef\@kian@result{1}%
+    \fi%
+  \fi%
+}}%
+\@ifundefined{justify}{\let\justification\kian@justify}{}%
+\@ifundefined{Jus}{\let\Jus\kian@justify}{}%
+
+%======================================%
+% ダッシュの定義と利用
+
+%==================%
+% ダッシュの定義
+
+% 使用法：\kian@dash
+\def\kian@dash{{%
+  \leavevmode\raise.10\zw\hbox{\hskip.2\zw\textendash\hskip.2\zw}%
+  %\leavevmode\raise.05\zw\hbox{\hskip.2\zw\textendash\hskip.2\zw}%
+}}%
+\@ifundefined{dash}{\let\dash\kian@dash}{}%
+\@ifundefined{Das}{\let\Das\kian@dash}{}%
+
+%==================%
+% ダッシュの利用
+
+% 使用法：\kian@minustodash{文字列}
+\def\kian@minustodash#1{%
+  \expandafter\kian@minustodash@A#1-\kian@minustodash-\@nil% \kian@minustodashは終了マーカー
+}%
+\def\kian@minustodash@A#1-#2-#3\@nil{{%
+  \let\underlineorig\underline\def\underline##1{\underlineorig{\kian@minustodash{##1}}}%
+  #1%
+  \ifx\kian@minustodash#2\relax\else%
+    \kian@dash%
+    \kian@minustodash@A#2-#3-\@nil%
+  \fi%
+}}%
+\@ifundefined{minustodash}{\let\minustodash\kian@minustodash}{}%
+\@ifundefined{Mtd}{\let\Mtd\kian@minustodash}{}%
+
+%==================%
+% 住所
+
+% 使用法：\kian@address{住所}
+\def\kian@address{%
+  \@ifnextchar[{\kian@titl@address@A}{\kian@titl@address@A[1]}%]
+}%
+\def\kian@titl@address@A[#1]#2{{% #1:郵便番号と住所の間の幅 #2:（郵便番号付き）住所
+  \kian@titl@address@B[#1]#2::\@nil%
+}}%
+\def\kian@titl@address@B[#1]#2:#3:#4\@nil{{% #1:郵便番号と住所の間の幅 #2:郵便番号|住所 #3:住所|空 #4:ゴミ
+  \ifx\relax#3\relax%
+    \kian@minustodash{#2}%
+  \else%
+    〒\kian@minustodash{#2}%"〒
+    \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax\hskip#1\dimen0\hskip\kanjiskip\relax%
+    \kian@minustodash{#3}%
+  \fi%
+}}%
+\@ifundefined{address}{\let\address\kian@address}{}%
+\@ifundefined{Add}{\let\Add\kian@address}{}%
+
+%==================%
+% 郵便番号
+
+% 使用法：\kian@zipnumber{郵便番号}
+\def\kian@zipnumber#1{\kian@minustodash{#1}}%
+\@ifundefined{zipnumber}{\let\zipnumber\kian@zipnumber}{}%
+\@ifundefined{Zip}{\let\Zip\kian@zipnumber}{}%
+
+%==================%
+% 電話番号
+
+% 使用法：\kian@telnumber{電話番号}
+\def\kian@telnumber#1{\kian@minustodash{#1}}%
+\@ifundefined{telnumber}{\let\telnumber\kian@telnumber}{}%
+\@ifundefined{Tel}{\let\Tel\kian@telnumber}{}%
+
+%==================%
+% ファックス番号
+
+% 使用法：\kian@faxnumber{ファックス番号}
+\def\kian@faxnumber#1{\kian@minustodash{#1}}%
+\@ifundefined{faxnumber}{\let\faxnumber\kian@faxnumber}{}%
+\@ifundefined{Fax}{\let\Fax\kian@faxnumber}{}%
+
+%======================================%
+% スタンプの定義
+
+\def\kian@titl@senderstamp{%
+  \@ifnextchar[{\senderstamp}{\senderstamp[]}%]
+}%
+
+%======================================%
+% 署名欄の定義
+
+\def\kian@signaturecolumn{%
+  \@ifstar%
+    {\kian@titl@signaturecolumn@A[u]}%
+    {\kian@titl@signaturecolumn@A[]}%
+}%
+\let\signaturecolumn\kian@signaturecolumn%
+\let\Sic\kian@signaturecolumn%
+\def\kian@titl@signaturecolumn@A[#1]#2{{%
+  \par\vskip\@kian@titl@blankvskip\baselineskip%
+  \hfill#2\kian@hspaceonkian{2}%
+  \ifx#1u%
+    \underline{{ご}{住}{所}\kian@hspaceonkian[=]{20.2}}%"ご"住"所
+  \else%
+    \hbox{{ご}{住}{所}\kian@hspaceonkian[=]{20.2}}%"ご"住"所
+  \fi%
+  \par\vskip\@kian@titl@blankvskip\baselineskip%
+  \hfill\underline{{お}{名}{前}\kian@hspaceonkian[+]{19.2}{\kian@stampmark}}%"お"名"前
+}}%
+
+%======================================%
+% 文字列に含まれる数字の割合を求める
+
+% 戻り値：数字の割合の百分率
+\def\kian@titl@numberratio#1{{% #1:文字列
+  \@tempcnta=0\relax\@tempcntb=0\relax\@tempcntc=0\relax%
+  \@tfor\@tempfuna:=#1\do{%
+    \expandafter\@tfor\expandafter\@tempfunb\expandafter:\expandafter=\@tempfuna\do{%
+      \expandafter\@tfor\expandafter\@tempfunc\expandafter:\expandafter=\@tempfunb\do{%
+        \expandafter\ifx\@tempfunc\underline\else%
+        \expandafter\ifx\@tempfunc\makebox\else%
+        \expandafter\ifx\@tempfunc\mbox\else%
+        \expandafter\ifx\@tempfunc\fbox\else%
+        \expandafter\ifx\@tempfunc\hbox\else%
+        \expandafter\ifx\@tempfunc\kian@justify\else%
+        \expandafter\ifx\@tempfunc\hss\else%
+        \expandafter\ifx\@tempfunc\hfil\else%
+        \expandafter\ifx\@tempfunc\hfill\else%
+        \expandafter\ifx\@tempfunc[\advance\@tempcntc by-1\else%
+        \expandafter\ifx\@tempfunc]\advance\@tempcntc by+1\else%
+        \ifnum\@tempcntc=0%
+          \advance\@tempcnta by1\relax%
+          \expandafter\ifx\@tempfunc0\advance\@tempcntb by1\relax\else%
+          \expandafter\ifx\@tempfunc1\advance\@tempcntb by1\relax\else%
+          \expandafter\ifx\@tempfunc2\advance\@tempcntb by1\relax\else%
+          \expandafter\ifx\@tempfunc3\advance\@tempcntb by1\relax\else%
+          \expandafter\ifx\@tempfunc4\advance\@tempcntb by1\relax\else%
+          \expandafter\ifx\@tempfunc5\advance\@tempcntb by1\relax\else%
+          \expandafter\ifx\@tempfunc6\advance\@tempcntb by1\relax\else%
+          \expandafter\ifx\@tempfunc7\advance\@tempcntb by1\relax\else%
+          \expandafter\ifx\@tempfunc8\advance\@tempcntb by1\relax\else%
+          \expandafter\ifx\@tempfunc9\advance\@tempcntb by1\relax\else%
+          \expandafter\ifnum\expandafter`\@tempfunc=41904\advance\@tempcntb by1\relax\else% ０
+          \expandafter\ifnum\expandafter`\@tempfunc=41905\advance\@tempcntb by1\relax\else% １
+          \expandafter\ifnum\expandafter`\@tempfunc=41906\advance\@tempcntb by1\relax\else% ２
+          \expandafter\ifnum\expandafter`\@tempfunc=41907\advance\@tempcntb by1\relax\else% ３
+          \expandafter\ifnum\expandafter`\@tempfunc=41908\advance\@tempcntb by1\relax\else% ４
+          \expandafter\ifnum\expandafter`\@tempfunc=41909\advance\@tempcntb by1\relax\else% ５
+          \expandafter\ifnum\expandafter`\@tempfunc=41910\advance\@tempcntb by1\relax\else% ６
+          \expandafter\ifnum\expandafter`\@tempfunc=41911\advance\@tempcntb by1\relax\else% ７
+          \expandafter\ifnum\expandafter`\@tempfunc=41912\advance\@tempcntb by1\relax\else% ８
+          \expandafter\ifnum\expandafter`\@tempfunc=41913\advance\@tempcntb by1\relax\else% ９
+          \fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi%
+        \fi%
+        \fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi%
+      }%
+    }%
+  }%
+  \ifnum\@tempcnta>0%
+    \multiply\@tempcntb by100\relax%
+    \divide\@tempcntb by\@tempcnta\relax%
+  \fi%
+  \xdef\@kian@result{\the\@tempcntb}% 数字の割合の百分率
+}}%
+
+%==========================================================%
+% 人の情報を表示
+
+%======================================%
+% 元締め
+
+\def\kian@person{%
+  \@ifnextchar[{\kian@person@A}{\kian@person@A[j]}%]
+}%
+\def\kian@person@A[#1]#2{{%
+  % オプション解析（肩書の表示位置）
+  %#1
+  % 表示
+  \let\@tempfuna\\\def\\{\\}% 改行の一時変更（"\\"が"\expandafter"で展開されてしまうのを防止するため）
+  \expandafter\expandafter\expandafter\kian@person@B\expandafter\expandafter#2\\@nil[#1]%
+}}%
+\def\kian@person@B#1\\#2@nil[#3]{{%
+  % 各行に小分けして表示
+  \ifx\relax#1\relax\else%
+    \let\\\@tempfuna% 改行を元に戻す
+    \@ifnextchar[{\kian@person@C}{\kian@person@C[\z@]}#1\@nil[#3]%]
+  \fi%
+  % 再帰呼出し
+  \setbox0=\hbox{#2}%
+  \ifdim\wd0=\z@\else%
+    \let\@tempfuna\\\def\\{\\}% 改行の一時変更（"\\"が"\expandafter"で展開されてしまうのを防止するため）
+    \expandafter\expandafter\expandafter\kian@person@B\expandafter\expandafter#2\\@nil[#3]%
+  \fi%
+}}%
+\def\kian@person@C[#1]#2\@nil[#3]{% #1:改行幅 #2:行タイプおよび行データ #3:オプション
+  \ifdim#1>\z@\vskip#1\relax\fi%
+  \kian@person@D[#3]#2===\@nil%
+}%
+\def\kian@person@D[#1]#2=#3=#4=#5\@nil{% #1:オプション #2:行タイプ|行データ #3:行データ|空 #4:空 #5:ゴミ
+  \ifx\relax#4\relax\else%
+    \errmessage{Package kian-titl Error: If you use "=" in "person", Put in parentheses}%
+  \fi%
+  \def\@tempfuna{X}\def\@tempfunb{#2}\ifx\@tempfuna\@tempfunb%
+    \kian@person@E{#3}% コマンド行
+  \else\def\@tempfuna{ X}\def\@tempfunb{#2}\ifx\@tempfuna\@tempfunb%
+    \kian@person@E{#3}% コマンド行
+  \else%
+    \kian@person@F[#1]#2=#3=#4\@nil% 行の表示
+    \endgraf% 改段落
+  \fi\fi%
+}%
+\def\kian@person@E#1{%
+  \setbox0=\hbox{#1}\ifdim\wd0=\z@#1\else#1\endgraf\fi% コマンド行
+}%
+\def\kian@person@F[#1]#2=#3=#4\@nil{{%
+  \ifx\relax#3\relax%
+    \expandafter\kian@person@G#2::[#1]{}\@nil\else% 行データタイプがない場合
+    \expandafter\kian@person@G#3::[#1]{#2}\@nil\fi% 行データタイプがある場合
+}}%
+\def\kian@person@G#1:#2:#3[#4]#5\@nil{{%
+  \kian@person@H[#4]{#5}{#1}{#2}%
+}}%
+\def\kian@person@H[#1]#2#3#4{{%
+  \setbox0=\hbox{\@ifnextchar\@nil{}{}#2}%
+  \setbox1=\hbox{\@ifnextchar\@nil{}{}#3}%
+  \setbox2=\hbox{\@ifnextchar\@nil{}{}#4}%
+  \ifdim\wd0=\z@%
+    % 行データタイプがない場合
+    \ifdim\wd1=\z@%
+      \ifdim\wd2=\z@%
+        % (行部分1,行部分2)=(無,無)
+      \else%
+        % (行部分1,行部分2)=(無,有)
+        \kian@titl@personaddress{#2}{}{#4}% 住所
+      \fi%
+    \else%
+      \ifdim\wd2=\z@%
+        % (行部分1,行部分2)=(有,無)
+        \kian@titl@numberratio{#3}%
+        \ifnum\@kian@result>66% 数字が3分2以上
+          \kian@titl@persontelephone{#3}% 電話とファックス
+        \else%
+          \kian@titl@personname[#1]{}{#3}{#4}% 肩書付き名前
+        \fi%
+      \else%
+        % (行部分1,行部分2)=(有,有)
+        \kian@titl@numberratio{#3}%
+        \ifnum\@kian@result>66% 数字が3分2以上
+          \kian@titl@personaddress{#2}{#3}{#4}% 住所
+        \else%
+          \kian@titl@personname[#1]{}{#3}{#4}% 肩書付き名前
+        \fi%
+      \fi%
+    \fi%
+  \else%
+    % 行データタイプがある場合
+    \@tfor\@tempfuna:=#2\do{\xdef\@tempfunb{\@tempfuna}}% \@tforは改行除外のため
+    \expandafter\ifx\@tempfunb A\kian@titl@personaddress{A}{#3}{#4}\else% 住所
+    \expandafter\ifx\@tempfunb a\kian@titl@personaddress{a}{#3}{#4}\else% 住所
+    \expandafter\ifx\@tempfunb H\kian@titl@personaddress{H}{#3}{#4}\else% 住居
+    \expandafter\ifx\@tempfunb h\kian@titl@personaddress{h}{#3}{#4}\else% 住居
+    \expandafter\ifx\@tempfunb D\kian@titl@personaddress{D}{}{#3#4}\else% 本籍
+    \expandafter\ifx\@tempfunb d\kian@titl@personaddress{d}{}{#3#4}\else% 本籍
+    \expandafter\ifx\@tempfunb C\kian@titl@personaddress{C}{}{#3#4}\else% 国籍
+    \expandafter\ifx\@tempfunb c\kian@titl@personaddress{c}{}{#3#4}\else% 国籍
+    \expandafter\ifx\@tempfunb T\kian@titl@persontelephone{#3}\else% 電話とファックス
+    \expandafter\ifx\@tempfunb B\kian@titl@personbirthday{#3}\else% 誕生日
+    \expandafter\ifx\@tempfunb G\kian@titl@persondeathday{#3}\else% 死亡日
+    \expandafter\ifx\@tempfunb N\kian@titl@personname[#1]{N}{#3}{#4}\else% 署名者の記名
+    \expandafter\ifx\@tempfunb n\kian@titl@personname[#1]{n}{#3}{#4}\else% 非署名者の記名
+    \expandafter\ifx\@tempfunb J\kian@titl@personjob{J}{#3}\else% 仕事
+    \expandafter\ifx\@tempfunb j\kian@titl@personjob{j}{#3}\else% 仕事
+    \kian@person@G[#1]{}{#3}{#4}\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi%
+  \fi%
+}}%
+\@ifundefined{person}{\let\person\kian@person}{}%
+\@ifundefined{Per}{\let\Per\kian@person}{}%
+
+%======================================%
+% 住所の表示
+
+%==================%
+% 幅の設定
+
+\def\kian@titl@personaddresshlength#1#2#3#4#5#6{%
+  \ifx\relax#1\relax\else\def\@kian@titl@personaddresshlengthA{#1}\fi% 全体の字下げ幅
+  \ifx\relax#2\relax\else\def\@kian@titl@personaddresshlengthB{#2}\fi% 「住所」等の幅
+  \ifx\relax#3\relax\else\def\@kian@titl@personaddresshlengthC{#3}\fi% 「住所」等の後のスキップ幅
+  \ifx\relax#4\relax\else\def\@kian@titl@personaddresshlengthD{#4}\fi% 郵便番号後の幅
+  \ifx\relax#5\relax\else\def\@kian@titl@personaddresshlengthE{#5}\fi% 郵便番号後のスキップ幅
+  \ifx\relax#6\relax\else\def\@kian@titl@personaddresshlengthF{#6}\fi% 2行目以下の字下げ幅
+}%
+\@ifundefined{personaddresshlength}{\let\personaddresshlength\kian@titl@personaddresshlength}{}%
+\kian@titl@personaddresshlength{0}{3}{1}{0}{1}{2}%
+
+%==================%
+% 表示
+
+\def\kian@titl@personaddress#1#2#3{{% #1:データタイプ #2:郵便番号 #3:住所（狭義）
+  \ifx\relax#3\relax%
+    \kian@titl@personaddress@A{#1}{}{#2}%
+  \else%
+    \kian@titl@personaddress@A{#1}{#2}{#3}%
+  \fi%
+}}%
+\def\kian@titl@personaddress@A#1#2#3{{% #1:データタイプ #2:郵便番号 #3:住所（狭義）
+  % 住所等の確認
+  \expandafter\ifx\expandafter\relax#1\relax\setbox0=\hbox{}\else%
+    \expandafter\ifx\expandafter A#1\relax%
+      \setbox0=\hbox{\kian@justify[\@kian@titl@personaddresshlengthB]{{住}{所}}}\else%"住"所
+    \expandafter\ifx\expandafter H#1\relax%
+      \setbox0=\hbox{\kian@justify[\@kian@titl@personaddresshlengthB]{{住}{居}}}\else%"住"居
+    \expandafter\ifx\expandafter D#1\relax%
+      \setbox0=\hbox{\kian@justify[\@kian@titl@personaddresshlengthB]{{本}{籍}}}\else%"本"籍
+    \expandafter\ifx\expandafter C#1\relax%
+      \setbox0=\hbox{\kian@justify[\@kian@titl@personaddresshlengthB]{{国}{籍}}}\else%"国"籍
+    \setbox0=\hbox{}\fi\fi\fi\fi% a|h|d|cの場合
+  \fi%
+  % 郵便番号の確認
+  \setbox1=\hbox{#2}\ifdim\wd1>\z@%
+    \ifdim\@kian@titl@personaddresshlengthD pt=\z@%
+      \setbox1=\hbox{{〒}\kian@minustodash{\@ifnextchar\@nil{}{}#2}}%"〒
+    \else%
+      \dimen0=1\zw\advance\dimen0 by\kanjiskip\relax\multiply\dimen0 by\@kian@titl@personaddresshlengthD\relax%
+        \advance\dimen0 by-\kanjiskip\relax%
+      \setbox1=\hbox to\dimen0{{〒}\kian@minustodash{\@ifnextchar\@nil{}{}#2}}%"〒
+    \fi%
+  \fi%
+  % 字下げの設定
+  \leftskip=\z@%
+  \dimen0=1\zw\advance\dimen0 by\kanjiskip\relax\multiply\dimen0 by\@kian@titl@personaddresshlengthA%
+  \advance\leftskip by\dimen0\relax% 全体の字下げ
+  \ifdim\wd0>\z@%
+    \advance\leftskip by\wd0\relax% 「住所」「本籍」「国籍」
+    \dimen0=1\zw\advance\dimen0 by\kanjiskip\relax\multiply\dimen0 by\@kian@titl@personaddresshlengthC\relax%
+      \advance\dimen0 by+\kanjiskip\relax%
+    \advance\leftskip by\dimen0\relax% 「住所」「本籍」「国籍」後のスキップ
+  \else\ifdim\wd1>\z@%
+    \advance\leftskip by\wd1\relax% 郵便番号
+    \dimen0=1\zw\advance\dimen0 by\kanjiskip\relax\multiply\dimen0 by\@kian@titl@personaddresshlengthE\relax%
+      \advance\dimen0 by+\kanjiskip\relax%
+    \advance\leftskip by\dimen0\relax% 郵便番号後のスキップ
+  \fi\fi%
+  \dimen0=1\zw\advance\dimen0 by\kanjiskip\relax\multiply\dimen0 by\@kian@titl@personaddresshlengthF\relax%
+  \advance\leftskip by\dimen0\relax% 2行目以下の字下げ
+  \global\leftskip=\leftskip%
+  % 改段落して行頭へ
+  \noindent\hskip-\leftskip%
+  % 全体の字下げ
+  \dimen0=1\zw\advance\dimen0 by\kanjiskip\relax\multiply\dimen0 by\@kian@titl@personaddresshlengthA\relax%
+  \hskip\dimen0\relax%
+  % 「住所」「本籍」「国籍」と郵便番号の表示
+  \ifdim\wd0>\z@%
+    % 「住所」「本籍」「国籍」がある場合
+    \box0%
+    \dimen0=1\zw\advance\dimen0 by\kanjiskip\relax\multiply\dimen0 by\@kian@titl@personaddresshlengthC\relax%
+      \advance\dimen0 by+\kanjiskip\relax%
+    \hskip\dimen0\relax% スキップ
+    \ifdim\wd1>\z@%
+      \dimen1=1\zw\advance\dimen1 by\kanjiskip\relax\multiply\dimen1 by\@kian@titl@personaddresshlengthF\relax%
+      \box1\\\hskip-\dimen1\relax%
+    \fi%
+  \else\ifdim\wd1>\z@%
+    % 「住所」「本籍」「国籍」がなく，郵便番号がある場合
+    \box1%
+    \dimen0=1\zw\advance\dimen0 by\kanjiskip\relax\multiply\dimen0 by\@kian@titl@personaddresshlengthE\relax%
+      \advance\dimen0 by+\kanjiskip\relax%
+    \hskip\dimen0\relax% スキップ
+  \fi\fi%
+  % 住所
+  \expandafter\kian@titl@personaddress@B#3////////\@nil%
+  % 字下げを元に戻す
+  \par\global\leftskip=\z@%
+}}%
+\def\kian@titl@personaddress@B#1/#2/#3/#4/#5/#6/#7/#8/#9\@nil{{% #1-8:住所の各パーツ
+  % 残りの幅を計算
+  \dimen0=\textwidth%
+  \advance\dimen0 by-\leftskip\relax%
+  \dimen1=1\zw\advance\dimen1 by\kanjiskip\relax\multiply\dimen1 by\@kian@titl@personaddresshlengthF\relax%
+  \advance\dimen0 by\dimen1\relax%
+  % 詰めた場合の幅を計算
+  \setbox0=\hbox{\kian@minustodash{\@ifnextchar\@nil{}{}#1#2#3#4#5#6#7#8}}%
+  \setbox1=\hbox{\kian@shortenkanjiskips\kian@minustodash{\@ifnextchar\@nil{}{}#1#2#3#4#5#6#7#8}}%
+  % 1行に収まるかを確認
+  \def\@tempfuna{0}% 長すぎない
+  \ifdim\wd0>\dimen0\def\@tempfuna{1}\fi% 普通で長すぎる
+  \ifdim\wd1>\dimen0\def\@tempfuna{2}\fi% 詰めても長すぎる
+  \ifx\relax#1\relax\ifx\relax#2\relax\else\def\@tempfuna{2}\fi\fi% 強制改行がある場合
+  \ifx\relax#2\relax\ifx\relax#3\relax\else\def\@tempfuna{2}\fi\fi% 強制改行がある場合
+  \ifx\relax#3\relax\ifx\relax#4\relax\else\def\@tempfuna{2}\fi\fi% 強制改行がある場合
+  \ifx\relax#4\relax\ifx\relax#5\relax\else\def\@tempfuna{2}\fi\fi% 強制改行がある場合
+  \ifx\relax#5\relax\ifx\relax#6\relax\else\def\@tempfuna{2}\fi\fi% 強制改行がある場合
+  \ifx\relax#6\relax\ifx\relax#7\relax\else\def\@tempfuna{2}\fi\fi% 強制改行がある場合
+  \ifx\relax#7\relax\ifx\relax#8\relax\else\def\@tempfuna{2}\fi\fi% 強制改行がある場合
+  \ifnum\@tempfuna=0%
+    % 普通に住所が残りの幅に収まる場合
+    \box0%
+  \else\ifnum\@tempfuna=1%
+    % 詰めれば住所が残りの幅に収まる場合
+    \box1%
+  \else%
+    % 住所全体が残りの幅に収まらない場合
+    \setbox2=\hbox{\kian@minustodash{\@ifnextchar\@nil{}{}#1}}%
+    %\setbox2=\hbox{\expandafter\kian@minustodash\expandafter{#1}}
+    \advance\dimen0 by-\wd2\relax\box2%
+    \def\@tempfuna{empty}%
+    \@tfor\@tempfunb:={#2}{#3}{#4}{#5}{#6}{#7}{#8}\do{%
+      \expandafter\ifx\expandafter\relax\@tempfunb\relax\else%
+        \setbox2=\hbox{\expandafter\kian@minustodash\expandafter{\@tempfunb}}\advance\dimen0 by-\wd2\relax%
+        \expandafter\ifx\expandafter\relax\@tempfuna\relax%
+          % 前が空の場合は強制改行
+          \\\dimen0=\textwidth\advance\dimen0 by-\leftskip\relax\advance\dimen0 by-\wd2\relax\box2%
+        \else%
+          \ifdim\dimen0<\z@%
+            % 住所の次が残りの幅に収まらない場合
+            \\\dimen0=\textwidth\advance\dimen0 by-\leftskip\relax\advance\dimen0 by-\wd2\relax\box2\else%
+            % 住所の次が残りの幅に収まる場合
+            \box2\fi%
+        \fi%
+      \fi%
+      \let\@tempfuna\@tempfunb%
+    }%
+  \fi\fi%
+}}%
+
+%======================================%
+% 電話番号及びファックス番号の表示
+
+%==================%
+% 幅の設定
+
+\def\kian@titl@persontelephonehlength#1#2#3#4#5{%
+  \ifx\relax#1\relax\else\def\@kian@titl@persontelephonehlengthA{#1}\fi% 全体の字下げ幅
+  \ifx\relax#2\relax\else\def\@kian@titl@persontelephonehlengthB{#2}\fi% 「TEL」又は「FAX」の幅
+  \ifx\relax#3\relax\else\def\@kian@titl@persontelephonehlengthC{#3}\fi% 「TEL」又は「FAX」後のスキップ幅
+  \ifx\relax#4\relax\else\def\@kian@titl@persontelephonehlengthD{#4}\fi% 電話番号又はファックス番号の幅
+  \ifx\relax#5\relax\else\def\@kian@titl@persontelephonehlengthE{#5}\fi% 電話番号とファックス番号の間のスキップ幅
+}%
+\@ifundefined{printtelephonehlength}{\let\printtelephonehlength\kian@titl@persontelephonehlength}{}%
+\kian@titl@persontelephonehlength{13}{2.8}{0}{7.7}{1.5}%
+
+%==================%
+% 表示
+
+\def\kian@titl@persontelephone#1{{% #1:「T=012-345-6789/012-345-6780」
+  \kian@titl@persontelephone@A#1==\@nil%
+}}%
+\def\kian@titl@persontelephone@A#1=#2=#3\@nil{{%
+  \expandafter\ifx\expandafter\relax#2\relax%
+    \kian@titl@persontelephone@B{}#1//\@nil%
+  \else%
+    \kian@titl@persontelephone@B{#1}#2//\@nil%
+  \fi%
+}}%
+\def\kian@titl@persontelephone@B#1#2/#3/#4\@nil{{%
+  % 幅の計算
+  \dimen0=1\zw\advance\dimen0 by\kanjiskip\relax%
+  \dimen1=\@kian@titl@persontelephonehlengthA\dimen0\relax%
+  \dimen2=\@kian@titl@persontelephonehlengthB\dimen0\relax\advance\dimen2 by-\kanjiskip\relax%
+  \dimen3=\@kian@titl@persontelephonehlengthC\dimen0\relax\advance\dimen3 by+\kanjiskip\relax%
+  \dimen4=\@kian@titl@persontelephonehlengthD\dimen0\relax\advance\dimen4 by-\kanjiskip\relax%
+  \dimen5=\@kian@titl@persontelephonehlengthE\dimen0\relax\advance\dimen5 by+\kanjiskip\relax%
+  % 電話番号の確認
+  \setbox0=\hbox{\kian@minustodash{#2}}%
+  \ifdim\wd0>\z@%
+    \ifdim\@kian@titl@persontelephonehlengthD pt<\z@\else%
+      \setbox0=\hbox to\dimen4{\kian@minustodash{#2}\hss}%
+    \fi%
+  \fi%
+  % ファックス番号の確認
+  \setbox1=\hbox{\kian@minustodash{#3}}%
+  \ifdim\wd1>\z@%
+    \ifdim\@kian@titl@persontelephonehlengthD pt<\z@\else%
+      \setbox1=\hbox to\dimen4{\kian@minustodash{#3}\hss}%
+    \fi%
+  \fi%
+  % 開始位置まで移動
+  \noindent%
+  \hskip\dimen1\relax%
+  % 電話番号の表示
+  \ifdim\wd0>\z@%
+    \ifdim\@kian@titl@persontelephonehlengthB pt<\z@%
+      \hbox{TEL}% 「TEL」
+    \else%
+      \hbox to\dimen2{TEL\hss}% 「TEL」
+    \fi%
+    \hskip\dimen3\relax% スキップ
+    \leavevmode\box0% 電話番号
+  \fi%
+  % ファクスへの調整
+  \setbox0=\hbox{\kian@minustodash{#2}}%
+ \ifdim\wd0>\z@%
+    \ifdim\wd1>\z@%
+      \ifdim\wd0>\dimen4%
+        \\\hskip\dimen1\relax%
+      \else%
+        \hskip\dimen5\relax% スキップ
+      \fi%
+    \fi%
+  \fi%
+  % ファックス番号
+  \ifdim\wd1>\z@%
+    \ifdim\@kian@titl@persontelephonehlengthB pt<\z@%
+      \hbox{FAX}% 「FAX」
+    \else%
+      \hbox to\dimen2{FAX\hss}% 「FAX」
+    \fi%
+    \hskip\dimen3\relax% スキップ
+    \box1% ファックス番号
+  \fi%
+  % 改段落
+  \par%
+}}%
+
+%======================================%
+% 職業の表示
+
+%==================%
+% 幅の設定
+
+\def\kian@titl@personjobhlength#1#2#3{%
+  \ifx\relax#1\relax\else\def\@kian@titl@printpersonjobhlengthA{#1}\fi% 全体の字下げ幅
+  \ifx\relax#2\relax\else\def\@kian@titl@printpersonjobhlengthB{#2}\fi% 「職業」の幅
+  \ifx\relax#3\relax\else\def\@kian@titl@printpersonjobhlengthC{#3}\fi% 「職業」後のスキップ幅
+}%
+\@ifundefined{printpersonjobhlength}{\let\printpersonjobhlength\kian@titl@personjobhlength}{}%
+\kian@titl@personjobhlength{0}{3}{1}%
+
+%==================%
+% 表示
+
+%\def\kian@titl@personjob#1{{%
+%  \kian@titl@personjob@A#1==\@nil%
+%}}%
+%\def\kian@titl@personjob@A#1=#2=#3\@nil{{%
+%  \expandafter\ifx\expandafter\relax#2\relax%
+%    \kian@titl@personjob@B{}{#1}%
+%  \else%
+%    \kian@titl@personjob@B{#1}{#2}%
+%  \fi%
+%}}%
+\def\kian@titl@personjob#1#2{{%
+  % インデントしない
+  \noindent%
+  % 全体の字下げ
+  \dimen0=1\zw\advance\dimen0 by\kanjiskip\relax\multiply\dimen0 by\@kian@titl@printpersonjobhlengthA\relax%
+  \hskip\dimen0%
+  \ifx\relax#1\relax\else\ifx J#1%
+    % 「職業」の表示
+    \kian@justify[\@kian@titl@printpersonjobhlengthB]{{職}{業}}% 職業
+    % 「職業」後のスキップ
+    \dimen0=1\zw\advance\dimen0 by\kanjiskip\relax\multiply\dimen0 by\@kian@titl@printpersonjobhlengthC\relax%
+    \advance\dimen0 by-\kanjiskip\relax\hskip\dimen0%
+  \fi\fi%
+  % 職業の表示
+  #2%
+  % 改段落
+  \par%
+}}%
+
+%======================================%
+% 生年月日及び死亡年月日の表示
+
+%==================%
+% 幅の設定
+
+\def\kian@titl@personbirthdayhlength#1#2{%
+  \ifx\relax#1\relax\else\def\@kian@titl@printpersonbirthdayhlengthA{#1}\fi% 全体の字下げ幅
+  \ifx\relax#2\relax\else\def\@kian@titl@printpersonbirthdayhlengthB{#2}\fi% 生年月日の幅
+}%
+\@ifundefined{printpersonbirthdayhlength}{\let\printpersonbirthdayhlength\kian@titl@personbirthdayhlength}{}%
+\kian@titl@personbirthdayhlength{25}{-1}%
+
+%==================%
+% 表示
+
+\def\kian@titl@personbirthday#1{{%
+  \kian@titl@personbirthday@A#1==\@nil%
+}}%
+\def\kian@titl@personbirthday@A#1=#2=#3\@nil{{%
+  \expandafter\ifx\expandafter\relax#2\relax%
+    \kian@titl@personbirthday@B{}{#1}%
+  \else%
+    \kian@titl@personbirthday@B{#1}{#2}%
+  \fi%
+}}%
+\def\kian@titl@personbirthday@B#1#2{{%
+  % 改段落して行頭へ
+  %\par\noindent%
+  % 幅の計算
+  \dimen0=1\zw\advance\dimen0 by\kanjiskip\relax%
+  \dimen1=\@kian@titl@printpersonbirthdayhlengthA\dimen0\relax%
+  \dimen2=\@kian@titl@printpersonbirthdayhlengthB\dimen0\relax\advance\dimen2 by-\kanjiskip%
+  % 表示
+  \noindent\hskip\dimen1%
+  \ifdim\dimen2<\z@%
+    {#2{生}}%"生
+  \else%
+    \hbox to\dimen2{\hss#2{生}}%"生
+  \fi%
+}}%
+
+\def\kian@titl@persondeathday#1{{%
+  \kian@titl@persondeathday@A#1==\@nil%
+}}%
+\def\kian@titl@persondeathday@A#1=#2=#3\@nil{{%
+  \expandafter\ifx\expandafter\relax#2\relax%
+    \kian@titl@persondeathday@B{}{#1}%
+  \else%
+    \kian@titl@persondeathday@B{#1}{#2}%
+  \fi%
+}}%
+\def\kian@titl@persondeathday@B#1#2{{%
+  % 改段落して行頭へ
+  %\par\noindent%
+  % 幅の計算
+  \dimen0=1\zw\advance\dimen0 by\kanjiskip\relax%
+  \dimen1=\@kian@titl@printpersonbirthdayhlengthA\dimen0\relax%
+  \dimen2=\@kian@titl@printpersonbirthdayhlengthB\dimen0\relax\advance\dimen2 by-\kanjiskip%
+  % 表示
+  \noindent\hskip\dimen1%
+  \ifdim\dimen2<\z@%
+    {#2{死亡}}%"死"亡
+  \else%
+    \hbox to\dimen2{\hss#2{死亡}}%"死"亡
+  \fi%
+}}%
+
+%======================================%
+% 肩書き付き名前の表示
+
+%==================%
+% 幅の設定
+
+\def\kian@titl@personnamehlength#1#2#3#4{%
+  \ifx\relax#1\relax\else\def\@kian@titl@personnamehlengthA{#1}\fi% 全体の字下げ幅
+  \ifx\relax#2\relax\else\def\@kian@titl@personnamehlengthB{#2}\fi% 肩書きの幅
+  \ifx\relax#3\relax\else\def\@kian@titl@personnamehlengthC{#3}\fi% 肩書きと名前の間の幅
+  \ifx\relax#4\relax\else\def\@kian@titl@personnamehlengthD{#4}\fi% 名前の幅
+}%
+\@ifundefined{personnamehlength}{\let\personnamehlength\kian@titl@personnamehlength}{}%
+\kian@titl@personnamehlength{13}{10}{2}{10}%
+
+%==================%
+% 表示
+
+\def\kian@titl@personname[#1]#2#3#4{{% #1:オプション #2:データタイプ #3:肩書 #4:名前
+  \expandafter\ifx\expandafter\relax#4\relax%
+    % 肩書きがない場合
+    \kian@titl@personname@B[#1]{#2}///\@nil{}{#3}%
+  \else%
+    % 肩書きがある場合
+    \kian@titl@personname@A[#1]{#2}#3*\@nil{#4}%
+  \fi%
+}}%
+\def\kian@titl@personname@A[#1]#2#3*#4\@nil#5{{% #1:オプション #2:データタイプ #3:肩書 #4:*| #5:名前
+  \kian@titl@personname@B[#1]{#2}#3///\@nil{#4}{#5}%
+}}%
+\def\kian@titl@personname@B[#1]#2#3/#4/#5/#6\@nil#7#8{{% #1:オプション #2:データタイプ #3-5:肩書 #6:ゴミ #7:*| #8:名前
+  \ifx\relax#7\relax%
+    \kian@titl@personname@C[#1]{#2}{\@ifnextchar\@nil{}{}#3}{#4}{#5}{}{\@ifnextchar\@nil{}{}#8}%
+  \else%
+    \@tempcnta=0\@tfor\@tempfuna:=#3#4#5\do{\advance\@tempcnta by1\relax}%
+    \ifnum\@tempcnta=1%
+      % 1文字（「同」）の場合
+      \kian@titl@personname@C[#1]{#2}{\@ifnextchar\@nil{}{}#3}{#4}{#5}%
+        {\rlap{\hskip\kanjiskip\kian@charge}}{\@ifnextchar\@nil{}{}#8}%
+    \else%
+      % 1文字（「同」）でない場合
+      \kian@titl@personname@C[#1]{#2}{\@ifnextchar\@nil{}{}#3}{#4}{#5}%
+        {\hbox{\hskip\kanjiskip\kian@charge}}{\@ifnextchar\@nil{}{}#8}%
+    \fi%
+  \fi%
+}}%
+\def\kian@titl@personname@C[#1]#2#3#4#5#6#7{{% #1:オプション #2:データタイプ #3-5:肩書 #6:「（担当）」 #7:名前
+  % 理論幅の計算
+  \dimen0=1\zw\relax\advance\dimen0 by\kanjiskip\relax% 基準長
+  \dimen1=\@kian@titl@personnamehlengthA\dimen0\relax% 全体の字下げ
+  \dimen2=\@kian@titl@personnamehlengthB\dimen0\relax\advance\dimen2 by-\kanjiskip\relax% 肩書の幅
+  \dimen3=\@kian@titl@personnamehlengthC\dimen0\relax\advance\dimen3 by+\kanjiskip\relax% 肩書と名前の間の幅
+  \dimen4=\@kian@titl@personnamehlengthD\dimen0\relax\advance\dimen4 by-\kanjiskip\relax% 名前の幅
+  \dimen5=\dimen2\relax\advance\dimen5 by\dimen3\relax\advance\dimen5 by\dimen4\relax% 肩書から名前の全部の幅
+  \dimen6=\textwidth\relax\advance\dimen6 by-\dimen1\relax% 肩書の開始位置からページ右端までの幅
+  % 表示
+  \ifx\relax#5\relax%
+    % 強制改行はない場合
+    \ifx\relax#4\relax%
+      % 自動改行はない場合
+      \kian@titl@personname@D[#1]{}{#3#6}{#7}% 表示
+    \else%
+      % 自動改行がある場合
+      \setbox0=\hbox{#3#4#6}%
+      \ifdim\wd0>\dimen2%
+        % 肩書枠に収まらない場合
+        \kian@titl@personname@D[#1]{#3}{#4#6}{#7}% 表示
+      \else%
+        % 肩書枠に収まる場合
+        \kian@titl@personname@D[#1]{}{#3#4#6}{#7}% 表示
+      \fi%
+    \fi%
+  \else%
+    % 強制改行がある場合
+    \kian@titl@personname@D[#1]{#3#4}{#5#6}{#7}% 表示
+  \fi%
+}}%
+\def\kian@titl@personname@D[#1]#2#3#4{{% #1:オプション #2:改行肩書 #3:肩書 #4:名前
+  % 表示
+  \noindent%
+  % 改行肩書の表示
+  \kian@titl@personname@E{#2}%
+  % 肩書と名前の表示
+  \kian@titl@personname@F[#1]{#2}{#3}{#4}%
+}}%
+\def\kian@titl@personname@E#1{{% #1:改行肩書
+  \setbox0=\hbox{#1}%
+  \ifdim\wd0>\z@%
+    \ifdim\wd0<\dimen2%
+    %\dimen7=\dimen2\relax\advance\dimen7 by\dimen3\relax\advance\dimen7 by+1.00\zw\relax%
+    %\ifdim\wd1<\dimen7%
+      \hskip\dimen1\hbox{\kian@lengthenkanjiskips#1}\else%
+    \ifdim\wd0<\dimen6%
+      \hskip\dimen1\hbox{#1}\else%
+    \hfill{#1}\fi\fi%
+    \\%
+  \fi%
+}}%
+\def\kian@titl@personname@F[#1]#2#3#4{{% #1:オプション #2:改行肩書 #3:肩書 #4:名前
+  % 肩書の理論幅の測定
+  \setbox0=\hbox{\kian@name[\@kian@titl@personnamehlengthD]{#4}}%
+  \dimen7=\dimen5\relax\advance\dimen7 by-\wd0\relax\advance\dimen7 by-\kanjiskip\relax\advance\dimen7 by-1\zw\relax%
+  \dimen8=\dimen5\relax\advance\dimen8 by-\wd0\relax\advance\dimen8 by-\kanjiskip\relax%
+  \dimen9=\dimen5\relax\advance\dimen9 by-\wd0\relax\advance\dimen9 by-\kanjiskip\relax\advance\dimen9 by+1\zw\relax%
+  % 肩書の実測幅の測定
+  \setbox7=\hbox{\kian@shortenkanjiskips#3}%
+  \setbox8=\hbox{#3}%
+  \setbox9=\hbox{\kian@lengthenkanjiskips#3}%
+  \expandafter\ifx#1l%
+    % 左寄せ
+    \skip7=\wd7\relax%
+    \skip8=\wd8\relax%
+    \skip9=\wd9\relax%
+  \else\expandafter\ifx#1c%
+    % 中央寄せ
+    \skip7=\wd7\relax\advance\skip7 by\dimen2\relax\divide\skip7 by2\relax%
+    \skip8=\wd8\relax\advance\skip8 by\dimen2\relax\divide\skip8 by2\relax%
+    \skip9=\wd9\relax\advance\skip9 by\dimen2\relax\divide\skip9 by2\relax%
+  \else\expandafter\ifx#1r%
+    % 右寄せ
+    \skip7=\dimen2\relax%
+    \skip8=\dimen2\relax%
+    \skip9=\dimen2\relax%
+  \else%
+    % 均等割付け
+    \ifdim\wd0>1\zw%
+      % 1文字より長い場合
+      \setbox1=\hbox{#2}\ifdim\wd1>\z@%
+        % 改行肩書あり（中央寄せ）
+        \skip7=\wd7\relax\advance\skip7 by\dimen2\relax\divide\skip7 by2\relax%
+        \skip8=\wd8\relax\advance\skip8 by\dimen2\relax\divide\skip8 by2\relax%
+        \skip9=\wd9\relax\advance\skip9 by\dimen2\relax\divide\skip9 by2\relax%
+      \else%
+        % 改行肩書きなし
+        \skip7=\wd7\relax%
+        \skip8=\wd8\relax%
+        \skip9=\wd9\relax%
+        \ifdim\skip8<\dimen2%
+          \skip7=\dimen2\relax%
+          \skip8=\dimen2\relax%
+          \skip9=\dimen2\relax%
+        \fi%
+      \fi%
+    \else%
+      % 1文字以下の場合
+      \skip7=\wd7\relax\advance\skip7 by\dimen2\relax\divide\skip7 by2\relax%
+      \skip8=\wd8\relax\advance\skip8 by\dimen2\relax\divide\skip8 by2\relax%
+      \skip9=\wd9\relax\advance\skip9 by\dimen2\relax\divide\skip9 by2\relax%
+    \fi%
+  \fi\fi\fi%
+  % 肩書の理論幅と実測幅の比較
+  \ifdim\skip8>\dimen9%
+    \edef\@kian@result{5}%
+  \else\ifdim\skip8>\dimen8%
+    \ifdim\skip9>\dimen9\edef\@kian@result{4}\else\edef\@kian@result{3}\fi%
+  \else\ifdim\skip8>\dimen7%
+    \ifdim\skip7>\dimen7\edef\@kian@result{2}\else\edef\@kian@result{1}\fi%
+  \else%
+    \edef\@kian@result{0}\fi\fi\fi%
+  % 肩書の準備
+  \expandafter\ifx#1l%
+    % 左寄せ
+    \ifcase\@kian@result%
+      \def\@tempfuna{\hbox{#3}}\or%
+      \def\@tempfuna{\hbox to\dimen7{\kian@shortenkanjiskips#3}}\or%
+      \def\@tempfuna{\hbox{\kian@shortenkanjiskips#3}}\or%
+      \def\@tempfuna{\hbox{\kian@lengthenkanjiskips#3}}\or%
+      \def\@tempfuna{\hbox to\dimen9{\kian@lengthenkanjiskips#3}}\or%
+      \def\@tempfuna{#3}\fi%
+  \else\expandafter\ifx#1c%
+    % 中央寄せ
+    \ifcase\@kian@result%
+      \def\@tempfuna{\hbox to\dimen2{\hss\hbox{#3}\hss}}\or%
+      \multiply\dimen7 by2\relax\advance\dimen7 by-\dimen2\relax%
+      \def\@tempfuna{\hbox to\dimen2{\hss\hbox to\dimen7{\kian@shortenkanjiskips#3}\hss}}\or%
+      \def\@tempfuna{\hbox to\dimen2{\hss\hbox{\kian@shortenkanjiskips#3}\hss}}\or%
+      \def\@tempfuna{\hbox to\dimen2{\hss\hbox{\kian@lengthenkanjiskips#3}\hss}}\or%
+      \multiply\dimen9 by2\relax\advance\dimen9 by-\dimen2\relax%
+      \def\@tempfuna{\hbox to\dimen2{\hss\hbox to\dimen9{\kian@lengthenkanjiskips#3}\hss}}\or%
+      \def\@tempfuna{\hbox to\dimen2{\hss#3\hss}}\fi%
+  \else\expandafter\ifx#1r%
+    % 右寄せ
+    \def\@tempfuna{\hbox to\dimen2{\hss#3}}% 右寄せは拡縮できない
+  \else%
+    % 均等割付け
+    \ifdim\wd8>1\zw%
+      % 肩書が1文字より長い場合
+      \setbox1=\hbox{#2}\ifdim\wd1>\z@%
+        % 改行肩書あり（中央寄せ）
+        \def\@tempfuna{\hbox to\dimen2{\hss#3\hss}}%
+      \else%
+        % 改行肩書なし
+        \ifdim\wd8>\dimen2%
+          \ifcase\@kian@result%
+            \def\@tempfuna{\hbox{#3}}\or%
+            \def\@tempfuna{\hbox to\dimen7{\kian@shortenkanjiskips#3}}\or%
+            \def\@tempfuna{\hbox{\kian@shortenkanjiskips#3}}\or%
+            \def\@tempfuna{\hbox{\kian@lengthenkanjiskips#3}}\or%
+            \def\@tempfuna{\hbox to\dimen9{\kian@lengthenkanjiskips#3}}\or%
+            \def\@tempfuna{#3}\fi%
+        \else%
+          \def\@tempfuna{\hbox to\dimen2{\kian@fillkanjiskips#3}}%
+        \fi%
+      \fi%
+    \else\ifdim\wd8>\z@%
+      % 肩書が1文字以下の場合
+      \def\@tempfuna{\hbox to\dimen2{\hss#3\hss}}%
+    \else%
+      % 肩書が空の場合
+      \def\@tempfuna{\relax}%
+    \fi\fi%
+  \fi\fi\fi%
+  % 名前の理論幅の測定
+  \dimen7=\dimen5\relax\advance\dimen7 by-\skip8\relax\advance\dimen7 by-\kanjiskip\relax\advance\dimen7 by-1\zw\relax%
+  \dimen8=\dimen5\relax\advance\dimen8 by-\skip8\relax\advance\dimen8 by-\kanjiskip\relax%
+  \dimen9=\dimen5\relax\advance\dimen9 by-\skip8\relax\advance\dimen9 by-\kanjiskip\relax\advance\dimen9 by+1\zw\relax%
+  % 名前の実測幅の測定
+  \setbox7=\hbox{\kian@shortenkanjiskips\kian@name[\@kian@titl@personnamehlengthD]{#4}}%
+  \setbox8=\hbox{\kian@name[\@kian@titl@personnamehlengthD]{#4}}%
+  \setbox9=\hbox{\kian@lengthenkanjiskips\kian@name[\@kian@titl@personnamehlengthD]{#4}}%
+  \skip7=\wd7\relax%
+  \skip8=\wd8\relax%
+  \skip9=\wd9\relax%
+  \ifdim\skip8<\dimen4%
+    \skip7=\dimen4\relax%
+    \skip8=\dimen4\relax%
+    \skip9=\dimen4\relax%
+  \fi%
+  % 名前の理論幅と実測幅の比較
+  \ifdim\skip8>\dimen9%
+    \edef\@kian@result{5}%
+  \else\ifdim\skip8>\dimen8%
+    \ifdim\skip9>\dimen9\edef\@kian@result{4}\else\edef\@kian@result{3}\fi%
+  \else\ifdim\skip8>\dimen7%
+    \ifdim\skip7>\dimen7\edef\@kian@result{2}\else\edef\@kian@result{1}\fi%
+  \else%
+    \edef\@kian@result{0}\fi\fi\fi%
+  \expandafter\ifx\expandafter\relax\@tempfuna\relax\edef\@kian@result{0}\fi% 肩書が空の場合の修正
+  % 名前の準備
+  \ifdim\wd8>\dimen4%
+    \ifcase\@kian@result%
+      \def\@tempfunb{\hbox{\kian@name[\@kian@titl@personnamehlengthD]{#4}}}\or%
+      \def\@tempfunb{\hbox to\dimen7{\kian@shortenkanjiskips\kian@name[\@kian@titl@personnamehlengthD]{#4}}}\or%
+      \def\@tempfunb{\hbox{\kian@shortenkanjiskips\kian@name[\@kian@titl@personnamehlengthD]{#4}}}\or%
+      \def\@tempfunb{\hbox{\kian@lengthenkanjiskips\kian@name[\@kian@titl@personnamehlengthD]{#4}}}\or%
+      \def\@tempfunb{\hbox to\dimen9{\kian@name[\@kian@titl@personnamehlengthD]{#4}}}\or%
+      \def\@tempfunb{\kian@name[\@kian@titl@personnamehlengthD]{#4}}\fi%
+  \else%
+    \def\@tempfunb{\hbox{\kian@name[\@kian@titl@personnamehlengthD]{#4}}}%
+  \fi%
+  % 修正と表示
+  \ifnum\@kian@result>2%
+    % 改行が必要な場合
+    \expandafter\ifx#1l%
+      % 左寄せ
+      \hskip\dimen1\@tempfuna\\\hskip\dimen1\hbox to\dimen5{\hss\@tempfunb}%
+    \else\expandafter\ifx#1c%
+      % 中央寄せ
+      \hskip\dimen1\@tempfuna\\\hskip\dimen1\hbox to\dimen5{\hss\@tempfunb}%
+    \else\expandafter\ifx#1r%
+      % 右寄せ
+      \hskip\dimen1\@tempfuna\\\hskip\dimen1\hbox to\dimen5{\hss\@tempfunb}%
+    \else%
+      % 均等割付け
+      \setbox0=\hbox{\@tempfuna}\dimen0=\textwidth\relax\advance\dimen0 by-\dimen1\relax%
+      \ifdim\wd0>\dimen0%
+        \hfill\@tempfuna\\\hskip\dimen1\hbox to\dimen5{\hss\@tempfunb}\else%
+        \hskip\dimen1\@tempfuna\\\hskip\dimen1\hbox to\dimen5{\hss\@tempfunb}\fi%
+    \fi\fi\fi%
+  \else%
+    % 改行は不要な場合
+    \hskip\dimen1\hbox to\dimen5{\@tempfuna\hss\@tempfunb}%
+  \fi%
+}}%
+
+%==========================================================%
+% 終了
+
+\endinput%

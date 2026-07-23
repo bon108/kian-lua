@@ -1,0 +1,311 @@
+% kian-opti.sty
+% Copyright (C) 2016-2020  Seiichiro HATA
+% Modified 2026 by Shinichi Noro（野呂伸一）: adapted for LuaLaTeX (luatexja).
+%
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+%\NeedsTeXFormat{pLaTeX2e}%
+\ProvidesPackage{kian-opti}[2020/09/04 v03]%
+
+%==============================================================================%
+% オプション設定
+
+\RequirePackage{graphicx}%
+
+%==========================================================%
+% kian-page
+
+\let\別紙\kian@anothersheet%
+
+%==========================================================%
+% kian-sect
+
+% 算用数字
+\def\kian@arabic#1{{% #1:番号
+  \hbox to1\zw{\hss%
+    \ifnum#1<0\@ctrerr\else%
+    \ifnum#1<10\scalebox{1}[1]{#1}\else%
+    \ifnum#1<100\scalebox{.8}[1]{#1}\else%
+    \ifnum#1<1000\scalebox{.64}[1]{#1}\else%
+    \@ctrerr\fi\fi\fi\fi\hss}%
+}}%
+% 小文字ローマ数字
+\AtBeginDocument{\@ifundefined{ajroman}{}{\let\kian@roman\ajroman}}%
+
+% 大文字ローマ数字
+\AtBeginDocument{\@ifundefined{ajRoman}{}{\let\kian@Roman\ajRoman}}%
+
+% 丸囲み文字
+\def\kian@ksMaru@#1{{%
+  % 縦の重心のズレ高を計算
+  \setbox0=\hbox{\scalebox{.8}{□}}\setbox1=\hbox{\scalebox{.8}{#1}}%
+  \dimen0=\ht0\relax\advance\dimen0 by\dp0\relax\divide\dimen0 by2\relax\advance\dimen0 by-\dp0\relax%
+  \dimen1=\ht1\relax\advance\dimen1 by\dp1\relax\divide\dimen1 by2\relax\advance\dimen1 by-\dp1\relax%
+  \advance\dimen0 by-\dimen1\relax%
+  \leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss%
+  \raisebox{.08\zw}{\textcircled{\raisebox{-.06\zw}{\raisebox{\dimen0}{\scalebox{.8}{#1}}}}}%
+  \hss}}}%
+\AtBeginDocument{\@ifundefined{ajMaru}{}{\let\kian@ksMaru\ajMaru}}%
+\AtBeginDocument{\@ifundefined{ajMaruKansuji}{}{\let\kian@ksMaruKansuji\ajMaruKansuji}}%
+\AtBeginDocument{\@ifundefined{ajMaruKata}{}{\let\kian@ksMaruKata\ajMaruKata}}%
+\AtBeginDocument{\@ifundefined{ajMarualph}{}{\let\kian@ksMarualph\ajMarualph}}%
+\AtBeginDocument{\@ifundefined{ajMaruAlph}{}{\let\kian@ksMaruAlph\ajMaruAlph}}%
+% \ajMaruromanは準備されていない
+% \ajMaruRomanは準備されていない
+
+% 括弧囲み文字
+\def\kian@ksKakko@#1{{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss%
+  \scalebox{.64}[1]{\raisebox{.08\zw}{(}}%
+  \hskip-.1\zw%
+  \scalebox{.81}[1]{\hbox to1\zw{\hss#1\hss}}%
+  \hskip-.1\zw%
+  \scalebox{.64}[1]{\raisebox{.08\zw}{)}}%
+\hss}}}%
+
+% 括弧付き文字
+\def\kian@kskakko@#1{{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss%
+  \scalebox{.90}[1]{\hbox to1\zw{\hss#1\hss}}%
+  \hskip-.0425\zw%
+  \scalebox{.80}[1]{\raisebox{.08\zw}{)}}\hskip-.15\zw% \hskipは揃えるために必要
+}}}%
+
+% ドット付き文字
+\def\kian@ksDot@#1{{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss%
+  \scalebox{.90}[1]{\hbox to1\zw{\hss#1\hss}}%
+  {.}\hskip-.15\zw% \hskipは揃えるために必要
+}}}%
+%\AtBeginDocument{\@ifundefined{ajPeriod}{}{\let\kian@ksDotArabic\ajPeriod}}%
+
+% コロン付き文字
+\def\kian@ksColon@#1{{\leavevmode\hbox to1\zw{\kanjiskip=\z@\xkanjiskip=\z@\hss%
+  \scalebox{.90}[1]{\hbox to1\zw{\hss#1\hss}}%
+  {:}\hskip-.15\zw% \hskipは揃えるために必要
+}}}%
+
+% チェックボックス
+\AtBeginDocument{\@ifundefined{CID}{}{%
+  \def\kian@ballotbox{□}%
+  \def\kian@ballotboxwithcheck{\leavevmode\rlap{\CID{16270}}□}%
+}}%
+
+% 斜体の定義
+% ┌        ┐  ┌            ┐┌                       ┐┌            ┐  ┌            ┐
+% ｜1 tan(d)｜  ｜ sinθ cosθ｜｜sinθ/cosθ      0     ｜｜cosθ -sinθ｜  ｜1 2/tan(2θ)｜
+% ｜        ｜＝｜            ｜｜                       ｜｜            ｜＝｜            ｜
+% ｜0   1   ｜  ｜-cosθ sinθ｜｜     0      cosθ/sinθ｜｜sinθ  cosθ｜  ｜0     1     ｜
+% └        ┘  └            ┘└                       ┘└            ┘  └            ┘
+\def\kian@textslbox{%
+  \@ifnextchar[{\kian@textslbox@A}{\kian@textslbox@A[15]}%]
+}%
+\def\kian@textslbox@A[#1]#2{%
+  \setbox0=\hbox{#2}\dimen0=\wd0\relax%
+  \ifnum#1=0%
+    #2\else%
+  \ifnum#1=5%
+    \advance\dimen0 by.087155\zw\relax%
+    \leavevmode\hbox to\dimen0{%
+      \rotatebox{-46.252384}{\scalebox{.957211}[1.044700]{\rotatebox{+43.747615}{\smash{\rlap{#2}}}}}%
+    }\else%
+  \ifnum#1=-5%
+    \advance\dimen0 by.087155\zw\relax%
+    \leavevmode\hbox to\dimen0{\hspace{.087155\zw}%
+      \rotatebox{+46.252384}{\scalebox{.957211}[1.044700]{\rotatebox{-43.747615}{\smash{\rlap{#2}}}}}%
+    }\else%
+  %% dimen0:sin(d)   @ d= 5; s(d*pi/180)                                   =.08715574274765817355806427083747
+  %% rotate:θ       @ d= 5; a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi       =43.74761563923169983683506016895874
+  %% scale2:1/tanθ  @ d= 5; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; c(r)/s(r) =1.04470065776394596679417178890363
+  %% scale1:tanθ    @ d= 5; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; s(r)/c(r) =.95721199423802196157215311946867
+  %% rotate:pi/2-θ  @ d= 5; 90-a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi    =46.25238436076830016316493983104126
+  \ifnum#1=10%
+    \advance\dimen0 by.173648\zw\relax%
+    \leavevmode\hbox to\dimen0{%
+      \rotatebox{-47.519184}{\scalebox{.915715}[1.092042]{\rotatebox{+42.480815}{\smash{\rlap{#2}}}}}%
+    }\else%
+  \ifnum#1=-10%
+    \advance\dimen0 by.173648\zw\relax%
+    \leavevmode\hbox to\dimen0{\hspace{.173648\zw}%
+      \rotatebox{+47.519184}{\scalebox{.915715}[1.092042]{\rotatebox{-42.480815}{\smash{\rlap{#2}}}}}%
+    }\else%
+  %% dimen0:sin(d)   @ d=10; s(d*pi/180)                                   =.17364817766693034885171662676931
+  %% rotate:θ       @ d=10; a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi       =42.4808156133512537634401259233999
+  %% scale2:1/tanθ  @ d=10; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; c(r)/s(r) =1.09204236802396453613342707519442
+  %% scale1:tanθ    @ d=10; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; s(r)/c(r) =.91571538731549956266233668832577
+  %% rotate:pi/2-θ  @ d=10; 90-a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi    =47.5191843866487462365598740766001
+  \ifnum#1=15%
+    \advance\dimen0 by.258819\zw\relax%
+    \leavevmode\hbox to\dimen0{%
+      \rotatebox{-48.815371}{\scalebox{.874960}[1.142909]{\rotatebox{+41.184629}{\smash{\rlap{#2}}}}}%
+    }\else%
+  \ifnum#1=-15%
+    \advance\dimen0 by.258819\zw\relax%
+    \leavevmode\hbox to\dimen0{\hspace{.258819\zw}%
+      \rotatebox{+48.815371}{\scalebox{.874960}[1.142909]{\rotatebox{-41.184629}{\smash{\rlap{#2}}}}}%
+    }\else%
+  %% dimen0:sin(d)   @ d=15; s(d*pi/180)                                   =.25881904510252076234889883762404
+  %% rotate:θ       @ d=15; a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi       =41.1846298937849713319592236553354
+  %% scale2:1/tanθ  @ d=15; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; c(r)/s(r) =1.14290927816039503795518033510972
+  %% scale1:tanθ    @ d=15; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; s(r)/c(r) =.87496008572927233148262667661557
+  %% rotate:pi/2-θ  @ d=15; 90-a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi    =48.8153701062150286680407763446646
+  \ifnum#1=20%
+    \advance\dimen0 by.342020\zw\relax%
+    \leavevmode\hbox to\dimen0{%
+      \rotatebox{-50.157052}{\scalebox{.834439}[1.198409]{\rotatebox{+39.842947}{\smash{\rlap{#2}}}}}%
+    }\else%
+  \ifnum#1=-20%
+    \advance\dimen0 by.342020\zw\relax%
+    \leavevmode\hbox to\dimen0{\hspace{.342020\zw}%
+      \rotatebox{+50.157052}{\scalebox{.834439}[1.198409]{\rotatebox{-39.842947}{\smash{\rlap{#2}}}}}%
+    }\else%
+  %% dimen0:sin(d)   @ d=20; s(d*pi/180)                                   =.34202014332566873304409961468225
+  %% rotate:θ       @ d=20; a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi       =39.84294759219090168162718493274374
+  %% scale2:1/tanθ  @ d=20; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; c(r)/s(r) =1.19840952792711027785148226224318
+  %% scale1:tanθ    @ d=20; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; s(r)/c(r) =.83443929366090791650043437946633
+  %% rotate:pi/2-θ  @ d=20; 90-a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi    =50.15705240780909831837281506725626
+  \ifnum#1=25%
+    \advance\dimen0 by.422618\zw\relax%
+    \leavevmode\hbox to\dimen0{%
+      \rotatebox{-51.562134}{\scalebox{.793666}[1.259974]{\rotatebox{+38.437865}{\smash{\rlap{#2}}}}}%
+    }\else%
+  \ifnum#1=-25%
+    \advance\dimen0 by.422618\zw\relax%
+    \leavevmode\hbox to\dimen0{\hspace{.422618\zw}%
+      \rotatebox{+51.562134}{\scalebox{.793666}[1.259974]{\rotatebox{-38.437865}{\smash{\rlap{#2}}}}}%
+    }\else%
+  %% dimen0:sin(d)   @ d=25; s(d*pi/180)                                   =.42261826174069943618697848964772
+  %% rotate:θ       @ d=25; a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi       =38.4378659386041456056983679979375
+  %% scale2:1/tanθ  @ d=25; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; c(r)/s(r) =1.25997450865767787065139459753293
+  %% scale1:tanθ    @ d=25; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; s(r)/c(r) =.79366685050267927782138840273335
+  %% rotate:pi/2-θ  @ d=25; 90-a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi    =51.5621340613958543943016320020625
+  \ifnum#1=30%
+    \advance\dimen0 by.500000\zw\relax%
+    \leavevmode\hbox to\dimen0{%
+      \rotatebox{-53.051056}{\scalebox{.752157}[1.329508]{\rotatebox{+36.948943}{\smash{\rlap{#2}}}}}%
+    }\else%
+  \ifnum#1=-30%
+    \advance\dimen0 by.500000\zw\relax%
+    \leavevmode\hbox to\dimen0{\hspace{.500000\zw}%
+      \rotatebox{+53.051056}{\scalebox{.752157}[1.329508]{\rotatebox{-36.948943}{\smash{\rlap{#2}}}}}%
+    }\else%
+  %% dimen0:sin(d)   @ d=30; s(d*pi/180)                                   =.49999999999999999999999999999999
+  %% rotate:θ       @ d=30; a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi       =36.94894312400699235819657460279256
+  %% scale2:1/tanθ  @ d=30; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; c(r)/s(r) =1.32950813432787924989572324374095
+  %% scale1:tanθ    @ d=30; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; s(r)/c(r) =.75215786513825348538657446323898
+  %% rotate:pi/2-θ  @ d=30; 90-a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi    =53.05105687599300764180342539720744
+  \ifnum#1=35%
+    \advance\dimen0 by.573576\zw\relax%
+    \leavevmode\hbox to\dimen0{%
+      \rotatebox{-54.647671}{\scalebox{.709411}[1.409619]{\rotatebox{+35.352328}{\smash{\rlap{#2}}}}}%
+    }\else%
+  \ifnum#1=-35%
+    \advance\dimen0 by.573576\zw\relax%
+    \leavevmode\hbox to\dimen0{\hspace{.573576\zw}%
+      \rotatebox{+54.647671}{\scalebox{.709411}[1.409619]{\rotatebox{-35.352328}{\smash{\rlap{#2}}}}}%
+    }\else%
+  %% dimen0:sin(d)   @ d=35; s(d*pi/180)                                   =.57357643635104609610803191282615
+  %% rotate:θ       @ d=35; a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi       =35.35232863233438975114514120971356
+  %% scale2:1/tanθ  @ d=35; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; c(r)/s(r) =1.40961905882059351069563627609565
+  %% scale1:tanθ    @ d=35; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; s(r)/c(r) =.70941152061088373123711355665079
+  %% rotate:pi/2-θ  @ d=35; 90-a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi    =54.64767136766561024885485879028644
+  \ifnum#1=40%
+    \advance\dimen0 by.642787\zw\relax%
+    \leavevmode\hbox to\dimen0{%
+      \rotatebox{-56.380238}{\scalebox{.664895}[1.503995]{\rotatebox{+33.619761}{\smash{\rlap{#2}}}}}%
+    }\else%
+  \ifnum#1=-40%
+    \advance\dimen0 by.642787\zw\relax%
+    \leavevmode\hbox to\dimen0{\hspace{.642787\zw}%
+      \rotatebox{+56.380238}{\scalebox{.664895}[1.503995]{\rotatebox{-33.619761}{\smash{\rlap{#2}}}}}%
+    }\else%
+  %% dimen0:sin(d)   @ d=40; s(d*pi/180)                                   =.64278760968653932632264340990725
+  %% rotate:θ       @ d=40; a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi       =33.61976186269168458124005159982758
+  %% scale2:1/tanθ  @ d=40; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; c(r)/s(r) =1.50399531802777218473958332470809
+  %% scale1:tanθ    @ d=40; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; s(r)/c(r) =.6648956868504921729764560265849
+  %% rotate:pi/2-θ  @ d=40; 90-a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi    =56.38023813730831541875994840017242
+  \ifnum#1=45%
+    \advance\dimen0 by.707106\zw\relax%
+    \leavevmode\hbox to\dimen0{%
+      \rotatebox{-58.282525}{\scalebox{.618033}[1.618033]{\rotatebox{+31.717474}{\smash{\rlap{#2}}}}}%
+    }\else%
+  \ifnum#1=-45%
+    \advance\dimen0 by.707106\zw\relax%
+    \leavevmode\hbox to\dimen0{\hspace{.707106\zw}%
+      \rotatebox{+58.282525}{\scalebox{.618033}[1.618033]{\rotatebox{-31.717474}{\smash{\rlap{#2}}}}}%
+    }\else%
+  %% dimen0:sin(d)   @ d=45; s(d*pi/180)                                   =.70710678118654752440084436210484
+  %% rotate:θ       @ d=45; a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi       =31.71747441146100532421390313977366
+  %% scale2:1/tanθ  @ d=45; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; c(r)/s(r) =1.61803398874989484820458683436565
+  %% scale1:tanθ    @ d=45; r=a(2/(s(d*pi/180)/c(d*pi/180)))/2; s(r)/c(r) =.61803398874989484820458683436563
+  %% rotate:pi/2-θ  @ d=45; 90-a(2/(s(d*pi/180)/c(d*pi/180)))/2*180/pi    =58.28252558853899467578609686022634
+  \errmessage{Package kian-opti Error: Bad angle "#1"}%
+  \fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi\fi%
+}%
+\@ifundefined{textslbox}{\let\textslbox\kian@textslbox}{}%
+
+% セクション番号を表示する関数
+\def\kian@normalprintsectionZ#1{\presectionZname\mbox{\relax}\postsectionZname}%
+\def\kian@normalprintsectionA#1{\presectionAname\mbox{\hskip\kanjiskip\kian@ksArabic{#1}}\postsectionAname}%
+\def\kian@normalprintsectionB#1{\presectionBname\mbox{\kian@ksArabic{#1}}\postsectionBname}%
+\def\kian@normalprintsectionC#1{\presectionCname\mbox{\kian@ksKakkoArabic{#1}}\postsectionCname}%
+\def\kian@normalprintsectionD#1{\presectionDname\mbox{\kian@ksKata{#1}}\postsectionDname}%
+\def\kian@normalprintsectionE#1{\presectionEname\mbox{\kian@ksKakkoKata{#1}}\postsectionEname}%
+\def\kian@normalprintsectionF#1{\presectionFname\mbox{\kian@ksalph{#1}}\postsectionFname}%
+\def\kian@normalprintsectionG#1{\presectionGname\mbox{\kian@ksKakkoalph{#1}}\postsectionGname}%
+
+% 別紙
+\@ifundefined{kian@anothersheet}{}{%
+  \@ifundefined{別紙}{\let\別紙\kian@anothersheet}{}%
+}%
+
+% inhibitglueのバグ
+\def\kian@opti@inhibitglue{%
+  \@ifnextchar「{\inhibitglue}{%」
+  \@ifnextchar『{\inhibitglue}{%』
+  \@ifnextchar（{\inhibitglue}{%）
+  \@ifnextchar［{\inhibitglue}{%］
+  }}}}%
+}%
+\def\kian@sect@itemonkian@inhibitglue{\kian@opti@inhibitglue}%
+\def\kian@normalPrintsectionZ#1#2{{\kian@subject{#2}}}%
+\def\kian@normalPrintsectionA#1#2{{\printsectionA{#1}\kern1\zw\kern2\kanjiskip\kian@opti@inhibitglue#2}}%
+\def\kian@normalPrintsectionB#1#2{{\printsectionB{#1}\kern1\zw\kern2\kanjiskip\kian@opti@inhibitglue#2}}%
+\def\kian@normalPrintsectionC#1#2{{\printsectionC{#1}\kern1\zw\kern2\kanjiskip\kian@opti@inhibitglue#2}}%
+\def\kian@normalPrintsectionD#1#2{{\printsectionD{#1}\kern1\zw\kern2\kanjiskip\kian@opti@inhibitglue#2}}%
+\def\kian@normalPrintsectionE#1#2{{\printsectionE{#1}\kern1\zw\kern2\kanjiskip\kian@opti@inhibitglue#2}}%
+\def\kian@normalPrintsectionF#1#2{{\printsectionF{#1}\kern1\zw\kern2\kanjiskip\kian@opti@inhibitglue#2}}%
+\def\kian@normalPrintsectionG#1#2{{\printsectionG{#1}\kern1\zw\kern2\kanjiskip\kian@opti@inhibitglue#2}}%
+
+%==========================================================%
+% kian-titl
+
+\def\kian@charge{{\scalebox{.8}[1]{（担当）}}}%
+
+\def\kian@putinparenthesis#1{{%
+  \hskip\xkanjiskip\hbox{\scalebox{.9}[1]{（\hskip-.1\zw#1\hskip-.1\zw）}}\hskip\xkanjiskip%
+}}%
+
+\def\kian@stampmark{{%
+  \@ifundefined{CID}%
+    {印}%
+    {\CID{08191}}% \usepackage[multi]{otf}%
+}}%
+
+\let\西暦orig\西暦%
+\let\西暦\westerncalender%
+\let\和暦\japanesecalender%
+\let\両暦\doublecalender%
+
+%==========================================================%
+% 終了
+
+\endinput%
