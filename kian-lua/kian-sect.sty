@@ -1630,8 +1630,8 @@
         \ifnum#1<21\@tempcnta=#1\advance\@tempcnta by7554\CID{\@tempcnta}\else%
         \ifnum#1=21\CID{8091}\else%
         \ifnum#1<32\@tempcnta=#1\advance\@tempcnta by8080\CID{\@tempcnta}\else%
-        \ifnum#1<101\@tempcnta=#1\advance\@tempcnta by10212\CID{\@tempcnta}\else%
-        \errmessage{Package kian-sect Error: Too big number "#1"}%
+        \ifnum#1<51\@tempcnta=#1\advance\@tempcnta by10212\CID{\@tempcnta}\else%
+        \errmessage{Package kian-sect Error: Too big number "#1" (原ノ味明朝はCID10263以降(51以上)を実装していない)}%
         \fi\fi\fi\fi%
       \else%
         \errmessage{Package kian-sect Error: Too small number "#1"}%
@@ -1648,9 +1648,8 @@
     {\def\ajKakko#1{{%
       \ifnum#1>0%
         \ifnum#1<21\@tempcnta=#1\advance\@tempcnta by8070\CID{\@tempcnta}\else%
-        \ifnum#1<101\@tempcnta=#1\advance\@tempcnta by9873\CID{\@tempcnta}\else%
-        \errmessage{Package kian-sect Error: Too big number "#1"}%
-        \fi\fi%
+        \errmessage{Package kian-sect Error: Too big number "#1" (原ノ味明朝はCID9894以降(21以上)を実装していない)}%
+        \fi%
       \else%
         \errmessage{Package kian-sect Error: Too small number "#1"}%
       \fi%

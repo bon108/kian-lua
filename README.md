@@ -16,6 +16,7 @@ kian-lua は、秦誠一郎（Seiichiro HATA）氏が公開している公文書
 ## 必要環境
 
 - **LuaLaTeX**（TeX Live 等に同梱。`luatexja` パッケージが必要）
+- `tabularray`（証拠説明書テンプレートの表組みに使用。TeX Live 同梱）
 - 和文フォント: **原ノ味明朝**（HaranoAjiMincho-Regular）
 - （任意）IVS異体字を使う場合のみ: **IPAmj明朝**（入手方法は後述）
 
@@ -25,12 +26,12 @@ kian-lua は、秦誠一郎（Seiichiro HATA）氏が公開している公文書
 
 | ファイル | 書面 | 表題コマンド | 固有の注意点 |
 |---|---|---|---|
-| `template-junbi-lua.tex` | 準備書面 | `\Tit{準備書面}` | 第2準備書面以降は番号を付ける。事件番号・当事者は `\Idcs` 統合書式、宛先は `\Recs[n]`、署名は `\Sens[0.5]` |
-| `template-sojo-lua.tex` | 訴状（従来型・表紙あり） | `\Tit{訴　状}` | **紙提出・他庁向け**。当事者欄・訴訟物価額は本文中で組む（`\Jus[4]{…}`）。事件番号は未付番のため `\Idcs` なし。宛先は `\Recs[n]` |
-| `template-sojo-shushi-lua.tex` | 訴状―請求の趣旨（IT化） | ―（表紙なし） | **電子提出専用**。`\SecZ{請求の趣旨}` で番号なし冒頭見出し |
-| `template-sojo-genin-lua.tex` | 訴状―請求の原因（IT化） | ―（表紙なし） | **電子提出専用**。独立コンパイルで第１から自動採番 |
+| `template-junbi-lua.tex` | 準備書面 | `\Tit{準備書面}` | 事件番号・当事者は `\Idcs` 統合書式、宛先は `\Recs[n]`、署名は `\Sens[0.5]` |
+| `template-sojo-lua.tex` | 訴状（従来型・表紙あり） | `\Tit{訴　状}` | **紙提出用**。当事者欄・訴訟物価額は本文中で組む（`\Jus[4]{…}`）。事件番号は未付番のため `\Idcs` なし。宛先は `\Recs[n]` |
+| `template-sojo-shushi-lua.tex` | 訴状―請求の趣旨（IT化） | ―（表紙なし） | **電子提出用**。`\SecZ{請求の趣旨}` で番号なし冒頭見出し |
+| `template-sojo-genin-lua.tex` | 訴状―請求の原因（IT化） | ―（表紙なし） | **電子提出用**。独立コンパイルで第１から自動採番 |
 | `template-chinjutsu-lua.tex` | 陳述書 | `\Tit{陳述書（氏名）}` | 一人称で記載。末尾に住所・氏名・押印欄。事件番号・当事者は `\Idcs` 統合書式、宛先は `\Recs[n]` |
-| `template-shoko-lua.tex` | 証拠説明書 | `\Tit{証拠説明書（甲）}` | 乙号証なら `（乙）` に変更。`\shokorow{}{}{}{}{}` で各行を追加。事件番号・当事者は `\Idcs` 統合書式、代理人署名は `\Sens[0.5]` |
+| `template-shoko-lua.tex` | 証拠説明書 | `\Tit{証拠説明書（甲）}` | 乙号証なら `（乙）` に変更。`\shokorow{}{}{}{}{}{}{}`（7引数：号証番号・標目・原本/写し・作成年月日・作成者・立証趣旨・備考）で各行を追加。事件番号・当事者は `\Idcs` 統合書式、代理人署名は `\Sens[0.5]` |
 | `template-shokai-lua.tex` | 照会書 | `\Tit{照会書}` | 事件番号なし（`\Idcs` は使わない）。宛先は `\Recs[n]`、差出人（事務所・弁護士）は `\Sens[0.5]` |
 | `template-iken-lua.tex` | 意見書 | `\Tit{意見書}` | 作成者（専門家）は `\Sens[0.5]{…}` で表示。事件番号・当事者は `\Idcs` 統合書式（裁判所宛先はなし） |
 
@@ -68,13 +69,14 @@ VS Code 上で開いてビルドするだけでレシピが自動選択されま
 
 ## 異体字（IVS）の使い方
 
-全テンプレートで `\usepackage{kian-ivs,luatexja-ruby}` は**既定でコメントアウト**されています
-（通常の書面ではIVS・ルビを使わないため）。異体字が必要な場合のみ、該当テンプレート先頭の
-コメントを外してから使用してください。
+全テンプレートで `\usepackage{kian-ivs}` は**既定でコメントアウト**されています。
+異体字を使用する場合は、先頭のコメントを外してパッケージを有効にしてください。
 
 ```tex
 \usepackage{kian-lua}
-\usepackage{kian-ivs,luatexja-ruby}  % ← 先頭の % を外す
+% \usepackage{kian-ivs} %IVS 異体字（\ivs{文字}）  ← 先頭の % を外す
+% \usepackage{kian-otf} %囲み文字拡張
+% \usepackage{luatexja-ruby} %ルビ機能
 ```
 
 氏名などにIVS異体字が必要な場合は `\ivs{文字}` マクロを使います。
@@ -87,6 +89,21 @@ VS Code 上で開いてビルドするだけでレシピが自動選択されま
 - `\ivs{}` 内の文字には IVS セレクタ（見えない制御文字）が付いています
 - IPAmj明朝フォントで対象の字形が出力されます
 - 異体字が不要な文字はそのまま通常フォント（原ノ味明朝）で組まれます
+
+---
+
+## ルビの使い方
+
+全テンプレートで `\usepackage{luatexja-ruby}` は**既定でコメントアウト**されています。
+`luatexja-ruby` は `luatexja` 同梱のため追加インストールは不要です。
+先頭のコメントを外すと `\ruby{漢字}{かんじ}` でルビが振れます。
+
+```tex
+\usepackage{kian-lua}
+% \usepackage{kian-ivs} %IVS 異体字（\ivs{文字}）
+% \usepackage{kian-otf} %囲み文字拡張
+% \usepackage{luatexja-ruby} %ルビ機能  ← 先頭の % を外す
+```
 
 ---
 
@@ -116,6 +133,61 @@ VS Code 上で開いてビルドするだけでレシピが自動選択されま
 - `\\` … データ内で複数行に分ける
 - `[n]`（`\Recs`）… 宛先を右寄せ表示するオプション
 - `[0.5]`（`\Sens`）… 行間を詰めた署名欄表示のオプション
+
+---
+
+## otf 特殊文字（丸数字・かな囲み文字等）
+
+全テンプレートで `\usepackage{kian-otf}` は**既定でコメントアウト**されています。
+先頭のコメントを外してパッケージを有効にすると、丸数字・括弧数字等の番号コマンドに加えて
+丸ひらがな・丸片仮名・かな括弧・汎用囲み文字が使えます（Unicode範囲外・かな等は
+フォント非依存の自前合成で組版されます）。
+
+```tex
+\usepackage{kian-lua}
+% \usepackage{kian-ivs} %IVS 異体字（\ivs{文字}）
+% \usepackage{kian-otf} %囲み文字拡張  ← 先頭の % を外す
+% \usepackage{luatexja-ruby} %ルビ機能
+```
+
+### 番号コマンド
+
+| コマンド | 例 | 範囲 |
+|---|---|---|
+| `\丸{n}` | `\丸{21}` → ㉑ | 0〜99（51以上は自前合成） |
+| `\括弧{n}` | `\括弧{3}` → ⑶ | 0〜99（21以上は自前合成） |
+| `\黒丸{n}` | `\黒丸{5}` → ❺ | 0〜99（21以上は自前合成） |
+| `\角{n}` | `\角{7}` | 0〜99（常に自前合成） |
+| `\丸漢{n}` | `\丸漢{3}` → ㊂ | 1〜10 |
+| `\括弧漢{n}` | `\括弧漢{2}` → ㈡ | 1〜99（11以上は自前合成） |
+| `\丸英{n}` / `\丸英小{n}` | `\丸英{3}` → Ⓒ | 1〜26 |
+| `\大ローマ{n}` / `\小ローマ{n}` | `\大ローマ{4}` → Ⅳ | 1〜39（13以上は加算合成） |
+
+各コマンドには英語名のエイリアス（`\OtfMaru`・`\OtfKakko`・`\OtfKuroMaru`・`\OtfKaku`・
+`\OtfMaruKanji`・`\OtfKakkoKanji`・`\OtfMaruAlph`／`\OtfMarualph`・`\OtfRomanNum`／`\OtfromanNum`）
+も用意されており、どちらを使っても同じです。
+
+### かな系・汎用囲みコマンド
+
+かな系4コマンドは番号（`\丸平{3}`）でも、かな1字そのもの（`\丸平{う}`）でも指定できます。
+
+| コマンド | 例 | 範囲 |
+|---|---|---|
+| `\丸平{n/かな}` | `\丸平{3}`＝`\丸平{う}` → ◯うの字体 | 1〜48（あ〜ん、常に自前合成） |
+| `\丸片{n/カナ}` | `\丸片{3}`＝`\丸片{ウ}` → ㋒ | 1〜48（ア〜ン、48のみ自前合成） |
+| `\括弧平{n/かな}` | `\括弧平{1}`＝`\括弧平{あ}` → （あ） | 1〜48 |
+| `\括弧片{n/カナ}` | `\括弧片{1}`＝`\括弧片{ア}` → （ア） | 1〜48 |
+| `\丸囲[倍率]{文字}` | `\丸囲{甲}`、`\丸囲[.7]{國}` | 任意の1文字を◯で囲む（既定倍率.785） |
+| `\括弧囲[倍率]{文字}` | `\括弧囲{注}` → （注） | 任意の文字を括弧で囲む（既定倍率1） |
+
+囲み文字はいずれも全角1文字幅に収まるよう自動調整されます。範囲外の値を渡すと
+コンパイル時にエラーになり、PDF上にも警告マーカーが出ます。
+
+### チェックボックス
+
+☑／☐（チェックボックス記号）は原ノ味明朝に収録されていないため使えません。
+代わりに `kian-lua` 本体が提供する `\ballotbox`（□）・`\ballotboxwithcheck`（■）を
+使ってください（`kian-otf` の有効化は不要です）。
 
 ---
 
@@ -168,7 +240,8 @@ VS Code 上で開いてビルドするだけでレシピが自動選択されま
 │   ├── kian-lua.sty   ← 正式パッケージ本体（\usepackage{kian-lua}）
 │   ├── kian.sty       ← 後方互換エイリアス（\usepackage{kian}）
 │   ├── kian-base.sty
-│   ├── kian-ivs.sty
+│   ├── kian-ivs.sty   ← IVS異体字（\usepackage{kian-ivs}）
+│   ├── kian-otf.sty   ← 囲み文字拡張（\usepackage{kian-otf}）
 │   ├── kian-page.sty
 │   ├── kian-sect.sty
 │   ├── kian-titl.sty
@@ -182,6 +255,7 @@ VS Code 上で開いてビルドするだけでレシピが自動選択されま
 ├── template-shoko-lua.tex
 ├── template-shokai-lua.tex
 ├── template-iken-lua.tex
+├── .gitignore
 ├── LICENSE            ← GNU General Public License v3
 └── README.md          ← この文書
 ```
@@ -231,24 +305,7 @@ latexmk -r latexmkrc-lua example-sojo-genin-lua.tex
 | 提出方法 | 使用テンプレート |
 |---|---|
 | **電子提出（IT化）** | `template-sojo-shushi-lua.tex` ＋ `template-sojo-genin-lua.tex` |
-| 紙提出・他庁・簡裁等 | `template-sojo-lua.tex`（表紙あり一体型） |
-
----
-
-## 起案ファイルの命名規則（推奨）
-
-```
-件名-書面種別-番号.tex
-例（従来型）: example-sojo-lua.tex
-例（IT化）:   example-sojo-shushi-lua.tex  ← 請求の趣旨
-              example-sojo-genin-lua.tex   ← 請求の原因
-例（準備書面）: example-junbi-02-lua.tex
-```
-
-コンパイル:
-```sh
-latexmk -r latexmkrc-lua example-junbi-02-lua.tex
-```
+| **紙提出** | `template-sojo-lua.tex`（表紙あり一体型） |
 
 ---
 

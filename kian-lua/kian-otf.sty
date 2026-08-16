@@ -1,0 +1,566 @@
+% kian-otf.sty
+% Copyright (C) 2026  Shinichi Noro（野呂伸一）
+% Part of the kian-lua distribution, based on kian by Seiichiro HATA
+%   (https://hata-o.jp/kian/).
+%
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+%
+% otf（luatexja-otf / ajmacros）の囲み文字・特殊文字を本文で使うための
+% 任意読込アドオン。\usepackage{kian-lua} の後に読み込むこと:
+%
+%   \documentclass{ltjsarticle}
+%   \usepackage{kian-lua}
+%   \usepackage{kian-otf}
+%
+% 使い方の考え方（詳細は README-templates-lua.md 参照）:
+%
+%   第1層（既定）: ㈱ 〒 ㊞ ⑴ ㉑ 等は Unicode に符号位置があるので、
+%     .tex 中に文字をそのまま書けばよい。本パッケージが無くても動く。
+%
+%   第2層（本パッケージが提供）: 番号がカウンタ等の変数であるとき、または
+%     Unicode の収録範囲を超える番号（丸数字51以上、括弧数字21以上等）を
+%     使うときに \丸{n} \括弧{n} 等を使う。
+%
+%     ★2026/08 改訂: 範囲外を otf の CID にフォールバックするのをやめた。
+%     実測の結果、原ノ味明朝は Adobe-Japan1 の囲み文字 CID の大半を
+%     「.notdef（未定義字体）の複製」として実装しており、CID直指定は
+%     警告なしに空白になる（酷い場合は無関係な文字が印字される）。
+%     このため範囲外は、原ノ味明朝に実在する ◯●□() を土台にした
+%     フォント非依存の自前合成で組む。合成でも読めない桁数（丸数字なら
+%     3桁以上等）は \PackageError で確実に止め、PDF上にも赤枠マーカーを
+%     出す（サイレントな空白・誤字を二度と起こさないため）。
+%
+%   第3層: 上記でも足りない、Unicode に無い字形（半角丸数字・星付き等）が
+%     必要なときだけ otf 生コマンドを使う。ただし \OtfMaruAJ 等は
+%     原ノ味明朝では ⑴〜㊿・㈠〜㈩ 等の既存範囲以外ほぼ機能しない
+%     （実測確認済み）。使ったら必ず PDF を目視すること。
+%
+% 別フォントへの切替について:
+%   otfのCIDだけ別フォント（kian-ivs.styのIPAmj明朝方式）に切り替える案も
+%   検討したが、(a) IPAmj明朝はCID-keyedフォントではなくUnicode+IVS方式で
+%   転用不可、(b) 該当する丸数字51以上等はそもそもUnicodeに符号位置が
+%   存在しないため非CID方式のフォントでは原理的に出せない、という
+%   二重の理由で技術的に成立しない（実測確認済み）。無償で使える
+%   Adobe-Japan1 CID-keyedフォントは原ノ味と同じSource Han系統で
+%   同じ欠落を共有する。拡張シンボル系まで完全実装しているのは
+%   小塚Pr6N等の商用フォントのみ。
+
+\ProvidesPackage{kian-otf}[2026/08/16 v2.1 otf 特殊文字拡張（自前合成版）]%
+
+%==============================================================================%
+% 前提チェック
+
+\RequirePackage{iftex}
+\ifLuaTeX\else
+  \PackageError{kian-otf}{kian-otf は LuaLaTeX 専用です}{}%
+\fi
+
+\@ifundefined{CID}{%
+  \PackageError{kian-otf}%
+    {luatexja-otf が読み込まれていません。\MessageBreak
+     \string\usepackage{kian-lua} を先に読み込んでください}{}%
+}{}%
+
+% xcolor（範囲外エラー時のPDF上マーカー・黒丸内の白抜き数字に使用）
+% graphicx は kian-lua が既に読込済み。
+\RequirePackage{xcolor}
+
+%==============================================================================%
+% 第3層: otf 生コマンドへの入口
+%
+% kian-sect.sty が \AtBeginDocument{...} 内で \ajMaru と \ajKakko を
+% 独自版に上書きする（見出し番号表示で \protect を効かせるため）。
+% その独自版は 0 や星付き（半角字形）に対応していない。
+% 本パッケージはプリアンブルの読込時点（\AtBeginDocument より前）で
+% ajmacros の原版を \let で退避するので、kian-sect による上書きの影響を
+% 受けない。\AtBeginDocument で包まないことが必須。
+%
+% 注意: 原ノ味明朝では、これらの otf 生コマンドは既存のUnicode収録範囲
+% （丸数字0〜50・括弧数字1〜20・丸漢数字1〜10・括弧漢数字1〜10・
+% ローマ数字1〜12）の外ではほぼ確実に空白または無関係な文字になる
+% （実測確認済み）。使う場合は必ずコンパイル後のPDFを目視すること。
+
+\let\kian@otf@Maru\ajMaru
+\let\kian@otf@Kakko\ajKakko
+\let\OtfMaruAJ\kian@otf@Maru      % \OtfMaruAJ{0}, \OtfMaruAJ*{5} 等が使える
+\let\OtfKakkoAJ\kian@otf@Kakko    % \OtfKakkoAJ{0}, \OtfKakkoAJ*{5} 等が使える
+
+%==============================================================================%
+% 第2層の内部プリミティブ（フォント非依存の自前合成）
+%
+% kian-opti.sty の \kian@ksMaru@ 等は参照・流用しない（見出し用に調整された
+% パラメータを本文と共用すると、将来どちらかを触ったときに互いに影響する
+% ため）。ただし「内容物の視覚重心を \ht/\dp から計算して中央に配置する」
+% という設計思想は踏襲する（独立実装）。
+%
+% 実測メトリクス（原ノ味明朝、1000 units/em）:
+%   ①(U+2460)・○(U+25CB)・◯(U+25EF)・●(U+25CF)・□(U+25A1) は
+%   いずれも視覚中心が (500, 380) で一致する。◯ を \scalebox{.96} すると
+%   外径が①とほぼ一致する（921.6 ≈ 922）。この実測値を土台に合成する。
+
+% 範囲外エラー: \PackageError に加え、PDF上にも赤枠の可視マーカーを出す。
+% ログ見落としでサイレントに文字が消える事故を防ぐのが目的。
+% #1=コマンド名（\string 済み） #2=渡された値 #3=有効範囲 #4=代替案
+\newcommand{\kian@otf@err}[4]{%
+  \PackageError{kian-otf}%
+    {#1\{#2\} は対応範囲外です（有効範囲: #3）。#4}%
+    {kian-otf.sty が自前合成できる範囲を超えています。}%
+  {\leavevmode
+   \ltjsetparameter{kanjiskip=\z@,xkanjiskip=\z@}\kanjiskip=\z@\xkanjiskip=\z@
+   \fbox{\textcolor{red}{#1\{#2\}:範囲外}}}%
+}%
+
+% 内容物を、視覚重心が基準線から0.38zw（実測値）の位置に来るよう配置する。
+\newcommand{\kian@otf@vcenter}[1]{%
+  \setbox2=\hbox{#1}%
+  \dimen4=\ht2\advance\dimen4 by\dp2\divide\dimen4 by2\advance\dimen4 by-\dp2
+  \dimen5=.38\zw\advance\dimen5 by-\dimen4
+  \raisebox{\dimen5}{\box2}}%
+
+% 背景（丸・黒丸等）の上に内容物を重ねる。背景の幅・中心基準に合わせる。
+\newcommand{\kian@otf@overlay}[2]{%
+  \setbox0=\hbox{#1}%
+  \hbox to\wd0{\rlap{\box0}\hfil\kian@otf@vcenter{#2}\hfil}}%
+
+% 桁数に応じた数字の圧縮率（1桁用倍率・2桁用倍率・数値）
+\newcommand{\kian@otf@digits}[3]{%
+  \ifnum#3<10 \scalebox{#1}{\the\numexpr#3\relax}%
+  \else\scalebox{#2}{\the\numexpr#3\relax}%
+  \fi}%
+
+% 丸（◯を0.96倍、内径約0.845em）
+\newcommand{\kian@otf@ring}[1]{{\leavevmode
+  \ltjsetparameter{kanjiskip=\z@,xkanjiskip=\z@}\kanjiskip=\z@\xkanjiskip=\z@
+  \hbox to1\zw{\hss\kian@otf@overlay{\scalebox{.96}{\ltjjachar"25EF\relax}}{#1}\hss}%
+}}%
+
+% 黒丸（●、白抜き数字）
+\newcommand{\kian@otf@blackring}[1]{{\leavevmode
+  \ltjsetparameter{kanjiskip=\z@,xkanjiskip=\z@}\kanjiskip=\z@\xkanjiskip=\z@
+  \hbox to1\zw{\hss\kian@otf@overlay{\ltjjachar"25CF\relax}{\textcolor{white}{#1}}\hss}%
+}}%
+
+% 角（罫線描画の\fbox。①と線幅・外形を実測一致させた値）
+% \fboxは中身の高さ・深さで枠の縦寸法が決まるため、中身の高さを揃えないと
+% 正方形にならず横長の枠になる。\rule で不可視のストラット（高さ.81zw・
+% 深さ.05zw）を差し込み、枠内側を.86zw角の正方形に固定する。
+\newcommand{\kian@otf@square}[1]{{\leavevmode
+  \ltjsetparameter{kanjiskip=\z@,xkanjiskip=\z@}\kanjiskip=\z@\xkanjiskip=\z@
+  \hbox to1\zw{\hss
+    \fboxsep=0pt\fboxrule=.03\zw
+    \fbox{\makebox[.86\zw][c]{\rule[-.05\zw]{\z@}{.86\zw}\kian@otf@vcenter{#1}}}%
+  \hss}%
+}}%
+
+% 内容物を指定幅ちょうどの箱に収める。はみ出す分だけ横方向に圧縮し（縦は
+% 原寸のまま）、収まっているときは中央寄せするだけ。倍率計算は graphics.sty
+% （\resizebox が内部で使う）の \Gscale@div を流用する。
+% \Gscale@div は \def で定義された素の（区切りなし・単一トークン引数の）
+% マクロのため、\dimen6 や \wd6 のような「プリミティブ＋数字」の2トークン
+% 列をそのまま渡すと1トークンしか拾われず後続が迷子になる。単一トークンの
+% 名前付き \newdimen レジスタを介して渡す。
+% #1=目標幅（dimen） #2=内容物
+\newdimen\kian@otf@dimA
+\newdimen\kian@otf@dimB
+\newcommand{\kian@otf@fitw}[2]{{%
+  \setbox6=\hbox{#2}%
+  \kian@otf@dimA=#1\relax
+  \ifdim\wd6>\kian@otf@dimA
+    \kian@otf@dimB=\wd6
+    \Gscale@div\kian@otf@ratio\kian@otf@dimA\kian@otf@dimB
+    \setbox6=\hbox{\scalebox{\kian@otf@ratio}[1]{\box6}}%
+  \fi
+  \hbox to\kian@otf@dimA{\hss\box6\hss}}}%
+
+% 括弧そのものの横圧縮率（実測で追い込む調整用パラメータ）
+\newcommand{\kian@otf@parenscale}{.62}%
+
+% 括弧（全角1文字幅）。丸系（\kian@otf@ring 等）と同じく \hbox to1\zw に
+% 収める。全角括弧（（）は1zwでは入らないため、⑴㈠等の実グリフと同じ
+% 流儀で、横方向に圧縮した半角括弧を土台にする。
+% #1=内容物の等倍縮小率（1なら等倍のまま横圧縮のみ） #2=内容物
+\newcommand{\kian@otf@paren}[2]{{\leavevmode
+  \ltjsetparameter{kanjiskip=\z@,xkanjiskip=\z@}\kanjiskip=\z@\xkanjiskip=\z@
+  \setbox8=\hbox{\scalebox{\kian@otf@parenscale}[1]{(}}%
+  \dimen8=1\zw \advance\dimen8 by-2\wd8
+  \hbox to1\zw{%
+    \kian@otf@vcenter{\copy8}%
+    \kian@otf@vcenter{\kian@otf@fitw{\dimen8}{\scalebox{#1}{#2}}}%
+    \kian@otf@vcenter{\scalebox{\kian@otf@parenscale}[1]{)}}%
+  }%
+}}%
+
+% 漢数字（1〜99）。十の位が1のときは「十」単独（十一等、一十とはしない）。
+% \or の直後に和文文字（catcode 11）を続けて書くと \or の制御綴名に
+% 飲み込まれる（例: \or二 が \or2 のような1つの未定義制御綴になる）ため、
+% 各 \or の後ろに半角スペースを1つ挟んで区切る。
+\newcommand{\kian@otf@kansuji@digit}[1]{\ifcase#1 \or 一\or 二\or 三\or 四\or 五\or 六\or 七\or 八\or 九\fi}%
+\newcommand{\kian@otf@kansuji}[1]{%
+  \@tempcnta=#1\relax\divide\@tempcnta by10 % \numexprの除算は四捨五入のため\divide（切り捨て）を使う
+  \@tempcntb=\numexpr#1-10*\@tempcnta\relax
+  \ifnum\@tempcnta=0 \kian@otf@kansuji@digit{\@tempcntb}%
+  \else
+    \ifnum\@tempcnta=1 十\else\kian@otf@kansuji@digit{\@tempcnta}十\fi
+    \ifnum\@tempcntb>0 \kian@otf@kansuji@digit{\@tempcntb}\fi
+  \fi}%
+
+% 括弧漢数字（11〜99、全角1文字幅）。「十一」〜「九十九」は2〜3文字ある
+% ため、\kian@otf@paren 内の横圧縮だけでも十分小さくなる。等倍縮小を
+% 重ねると縦横比が崩れて可読性が落ちるため、ここでは掛けない（#1=1）。
+\newcommand{\kian@otf@kakkokanji}[1]{\kian@otf@paren{1}{\kian@otf@kansuji{#1}}}%
+
+% ローマ数字13〜39の加算合成（Ⅹを実在するだけ並べ、端数を1〜9の実グリフで）
+% 原ノ味明朝には Ⅼ(U+216C)以降が無いため、40以上は非対応（別途エラー）。
+\newcommand{\kian@otf@romanXgen}[1]{% #1 = 十の位（1〜3）
+  \ltjjachar"2169\relax
+  \ifnum#1>1 \ltjjachar"2169\relax\fi
+  \ifnum#1>2 \ltjjachar"2169\relax\fi}%
+\newcommand{\kian@otf@romanxgen}[1]{% 小文字版
+  \ltjjachar"2179\relax
+  \ifnum#1>1 \ltjjachar"2179\relax\fi
+  \ifnum#1>2 \ltjjachar"2179\relax\fi}%
+
+% ひらがな・かたかな（1〜48。順序は ajmacros の \@aj@numberdef{Hira}/{Kata} と
+% 完全に一致させる: あ〜ん・ア〜ン、48番目が「ん／ン」）。丸ひらがなは
+% Unicodeに1字も無く、丸片仮名は1〜47（U+32D0〜32FE）のみ収録・48（ン）は
+% 無いため、両方をこのテーブルから合成する。
+% \or の直後に和文文字（catcode 11）を続けると制御綴名に飲み込まれるため、
+% \kian@otf@kansuji@digit と同様、各 \or の後ろに半角スペースを1つ挟む。
+\newcommand{\kian@otf@hira@char}[1]{\ifcase#1 %
+  \or あ\or い\or う\or え\or お\or か\or き\or く\or け\or こ\or%"  1〜10
+      さ\or し\or す\or せ\or そ\or た\or ち\or つ\or て\or と\or%" 11〜20
+      な\or に\or ぬ\or ね\or の\or は\or ひ\or ふ\or へ\or ほ\or%" 21〜30
+      ま\or み\or む\or め\or も\or や\or ゆ\or よ\or%"             31〜38
+      ら\or り\or る\or れ\or ろ\or わ\or ゐ\or ゑ\or を\or%"       39〜47
+      ん%"                                                        48
+  \fi}%
+\newcommand{\kian@otf@kata@char}[1]{\ifcase#1 %
+  \or ア\or イ\or ウ\or エ\or オ\or カ\or キ\or ク\or ケ\or コ\or%" 1〜10
+      サ\or シ\or ス\or セ\or ソ\or タ\or チ\or ツ\or テ\or ト\or%" 11〜20
+      ナ\or ニ\or ヌ\or ネ\or ノ\or ハ\or ヒ\or フ\or ヘ\or ホ\or%" 21〜30
+      マ\or ミ\or ム\or メ\or モ\or ヤ\or ユ\or ヨ\or%"             31〜38
+      ラ\or リ\or ル\or レ\or ロ\or ワ\or ヰ\or ヱ\or ヲ\or%"       39〜47
+      ン%"                                                        48
+  \fi}%
+
+% かな囲み用の輪（丸片仮名 ㋐ と外径・線幅を実測一致させた値。丸数字用の
+% \kian@otf@ring とは外径が異なる: ㋐は外径950・線幅30、◯を0.99倍すると
+% 950.4となり一致する）。中身は #1=倍率（既定.785、㋐内の「ア」で実測）
+% #2=内容物。
+\newcommand{\kian@otf@ringkana}[2]{{\leavevmode
+  \ltjsetparameter{kanjiskip=\z@,xkanjiskip=\z@}\kanjiskip=\z@\xkanjiskip=\z@
+  \hbox to1\zw{\hss\kian@otf@overlay{\scalebox{.99}{\ltjjachar"25EF\relax}}{\scalebox{#1}{#2}}\hss}%
+}}%
+
+% ひらがな・かたかな → 番号の逆引き表。上の正引き表（\kian@otf@hira@char 等）
+% を唯一の正本として自動生成する（手書きで二重管理すると将来ズレる事故が
+% あるため）。\csname kian@otf@hira@idx@<かな1字>\endcsname に番号を束縛する。
+\@tempcnta=\z@
+\@whilenum\@tempcnta<48 \do{%
+  \advance\@tempcnta\@ne
+  \edef\kian@otf@tmp{\kian@otf@hira@char{\the\@tempcnta}}%
+  \expandafter\xdef\csname kian@otf@hira@idx@\kian@otf@tmp\endcsname{\the\@tempcnta}%
+}%
+\@tempcnta=\z@
+\@whilenum\@tempcnta<48 \do{%
+  \advance\@tempcnta\@ne
+  \edef\kian@otf@tmp{\kian@otf@kata@char{\the\@tempcnta}}%
+  \expandafter\xdef\csname kian@otf@kata@idx@\kian@otf@tmp\endcsname{\the\@tempcnta}%
+}%
+
+% 引数が「数字始まり」か「かな1字」かを判定するヘルパ。ASCII数字（'0'〜'9'）
+% または負号（'-'）で始まるときだけ番号引数とみなす。先頭1トークンだけを
+% 見るので、\the\c@enumi 等が展開された複数桁の数字列にも対応する。
+\def\kian@otf@head#1#2\@nil{#1}%
+\newif\ifkian@otf@numarg
+\newcommand{\kian@otf@testnum}[1]{%
+  \ifx#1\@empty \kian@otf@numargfalse
+  \else
+    \edef\kian@otf@hd{\expandafter\kian@otf@head#1\@nil}%
+    \@tempcnta=\expandafter`\kian@otf@hd\relax
+    \ifnum\@tempcnta=45 \kian@otf@numargtrue
+    \else\ifnum\@tempcnta<48 \kian@otf@numargfalse
+    \else\ifnum\@tempcnta>57 \kian@otf@numargfalse
+    \else\kian@otf@numargtrue\fi\fi\fi
+  \fi}%
+
+%==============================================================================%
+% 第2層: 番号付き囲み文字コマンド
+%
+% Unicode で表せる範囲はそのまま出力、Unicode に無い範囲は上記プリミティブで
+% フォント非依存の自前合成、それでも読めない桁数は \PackageError で停止する。
+% otf の CID へのフォールバックは行わない（実測の結果、有効範囲が実質ゼロで
+% 誤字リスクだけが残るため）。
+%
+% \DeclareRobustCommand を使用（\newcommand ではなく）。見出し
+% （\SecA{\丸{5}} 等）の中で使っても .aux 経由で壊れないようにするため
+% （kian-sect.sty が \ajMaru 自体をロバスト化している理由と同じ）。
+
+% 丸数字　0〜50 は Unicode（⓪①〜⑳・㉑〜㉟・㊱〜㊿）、51〜99 は自前合成
+\DeclareRobustCommand{\OtfMaru}[1]{%
+  \ifnum#1<0 \kian@otf@err{\string\OtfMaru}{#1}{0〜99}{正の数を指定してください}%
+  \else\ifnum#1=0 \ltjjachar"24EA\relax
+  \else\ifnum#1<21 \ltjjachar\numexpr"2460+#1-1\relax
+  \else\ifnum#1<36 \ltjjachar\numexpr"3251+#1-21\relax
+  \else\ifnum#1<51 \ltjjachar\numexpr"32B1+#1-36\relax
+  \else\ifnum#1<100 \kian@otf@ring{\kian@otf@digits{.72}{.58}{#1}}%
+  \else\kian@otf@err{\string\OtfMaru}{#1}{0〜99}{「第#1項」等の別表記を検討してください}%
+  \fi\fi\fi\fi\fi\fi}%
+
+% 括弧数字　1〜20 は Unicode（⑴〜⒇）、0・21〜99 は自前合成。
+% 全角1文字幅に収める都合上、丸・黒丸・角と同じく100以上はエラーとする
+% （1zwに3桁を押し込むと本文サイズで判読できないため）。
+\DeclareRobustCommand{\OtfKakko}[1]{%
+  \ifnum#1<0 \kian@otf@err{\string\OtfKakko}{#1}{0〜99}{正の数を指定してください}%
+  \else\ifnum#1=0 \kian@otf@paren{1}{0}%
+  \else\ifnum#1<21 \ltjjachar\numexpr"2474+#1-1\relax
+  \else\ifnum#1<100 \kian@otf@paren{1}{\the\numexpr#1\relax}%
+  \else\kian@otf@err{\string\OtfKakko}{#1}{0〜99}{別表記を検討してください}%
+  \fi\fi\fi\fi}%
+
+% 黒丸数字　0は Unicode（⓿）、1〜20 は Unicode（❶〜❿・⓫〜⓴）、21〜99 は自前合成
+\DeclareRobustCommand{\OtfKuroMaru}[1]{%
+  \ifnum#1<0 \kian@otf@err{\string\OtfKuroMaru}{#1}{0〜99}{正の数を指定してください}%
+  \else\ifnum#1=0 \ltjjachar"24FF\relax
+  \else\ifnum#1<11 \ltjjachar\numexpr"2776+#1-1\relax
+  \else\ifnum#1<21 \ltjjachar\numexpr"24EB+#1-11\relax
+  \else\ifnum#1<100 \kian@otf@blackring{\kian@otf@digits{.68}{.54}{#1}}%
+  \else\kian@otf@err{\string\OtfKuroMaru}{#1}{0〜99}{別表記を検討してください}%
+  \fi\fi\fi\fi\fi}%
+
+% 角囲み数字　Unicode相当が無いため常に自前合成（\fbox）。0〜99 対応。
+\DeclareRobustCommand{\OtfKaku}[1]{%
+  \ifnum#1<0 \kian@otf@err{\string\OtfKaku}{#1}{0〜99}{正の数を指定してください}%
+  \else\ifnum#1<100 \kian@otf@square{\kian@otf@digits{.74}{.60}{#1}}%
+  \else\kian@otf@err{\string\OtfKaku}{#1}{0〜99}{別表記を検討してください}%
+  \fi\fi}%
+
+% 丸漢数字　1〜10 のみ（㊀〜㊉）。合成しても可読な代替表現が無いため
+% 11以上はエラー（\括弧漢 や \丸 での代替を案内）。
+\DeclareRobustCommand{\OtfMaruKanji}[1]{%
+  \ifnum#1<1 \kian@otf@err{\string\OtfMaruKanji}{#1}{1〜10}{正の数を指定してください}%
+  \else\ifnum#1<11 \ltjjachar\numexpr"3280+#1-1\relax
+  \else\kian@otf@err{\string\OtfMaruKanji}{#1}{1〜10}{\string\括弧漢\space 等で代替してください}%
+  \fi\fi}%
+
+% 括弧漢数字　1〜10 は Unicode（㈠〜㈩）、11〜99 は自前合成（十一）等
+\DeclareRobustCommand{\OtfKakkoKanji}[1]{%
+  \ifnum#1<1 \kian@otf@err{\string\OtfKakkoKanji}{#1}{1〜99}{正の数を指定してください}%
+  \else\ifnum#1<11 \ltjjachar\numexpr"3220+#1-1\relax
+  \else\ifnum#1<100 \kian@otf@kakkokanji{#1}%
+  \else\kian@otf@err{\string\OtfKakkoKanji}{#1}{1〜99}{別表記を検討してください}%
+  \fi\fi\fi}%
+
+% 丸英字（大文字）　1〜26（Ⓐ〜Ⓩ）。Unicode で完結、それ以外は無い。
+\DeclareRobustCommand{\OtfMaruAlph}[1]{%
+  \ifnum#1<1 \kian@otf@err{\string\OtfMaruAlph}{#1}{1〜26}{A〜Zの範囲で指定してください}%
+  \else\ifnum#1<27 \ltjjachar\numexpr"24B6+#1-1\relax
+  \else\kian@otf@err{\string\OtfMaruAlph}{#1}{1〜26}{A〜Zの範囲で指定してください}%
+  \fi\fi}%
+
+% 丸英字（小文字）　1〜26（ⓐ〜ⓩ）
+\DeclareRobustCommand{\OtfMarualph}[1]{%
+  \ifnum#1<1 \kian@otf@err{\string\OtfMarualph}{#1}{1〜26}{a〜zの範囲で指定してください}%
+  \else\ifnum#1<27 \ltjjachar\numexpr"24D0+#1-1\relax
+  \else\kian@otf@err{\string\OtfMarualph}{#1}{1〜26}{a〜zの範囲で指定してください}%
+  \fi\fi}%
+
+% 大文字ローマ数字　1〜12 は Unicode（Ⅰ〜Ⅻ）、13〜39 は Ⅹ の加算合成
+% （実在するUnicode文字の連結のみ。40以上はⅬが原ノ味明朝に無いため非対応）
+\DeclareRobustCommand{\OtfRomanNum}[1]{%
+  \ifnum#1<1 \kian@otf@err{\string\OtfRomanNum}{#1}{1〜39}{正の数を指定してください}%
+  \else\ifnum#1<13 \ltjjachar\numexpr"2160+#1-1\relax
+  \else\ifnum#1<40 {\leavevmode\ltjsetparameter{kanjiskip=\z@,xkanjiskip=\z@}\kanjiskip=\z@\xkanjiskip=\z@
+    \@tempcnta=#1\relax\divide\@tempcnta by10 % \numexprの除算は四捨五入のため\divideを使う
+    \@tempcntb=\numexpr#1-10*\@tempcnta\relax
+    \kian@otf@romanXgen{\@tempcnta}%
+    \ifnum\@tempcntb>0 \ltjjachar\numexpr"2160+\@tempcntb-1\relax\fi}%
+  \else\kian@otf@err{\string\OtfRomanNum}{#1}{1〜39}{ラテン文字で XL 等と直接記載してください}%
+  \fi\fi\fi}%
+
+% 小文字ローマ数字　1〜12 は Unicode（ⅰ〜ⅻ）、13〜39 は ⅹ の加算合成
+\DeclareRobustCommand{\OtfromanNum}[1]{%
+  \ifnum#1<1 \kian@otf@err{\string\OtfromanNum}{#1}{1〜39}{正の数を指定してください}%
+  \else\ifnum#1<13 \ltjjachar\numexpr"2170+#1-1\relax
+  \else\ifnum#1<40 {\leavevmode\ltjsetparameter{kanjiskip=\z@,xkanjiskip=\z@}\kanjiskip=\z@\xkanjiskip=\z@
+    \@tempcnta=#1\relax\divide\@tempcnta by10 % \numexprの除算は四捨五入のため\divideを使う
+    \@tempcntb=\numexpr#1-10*\@tempcnta\relax
+    \kian@otf@romanxgen{\@tempcnta}%
+    \ifnum\@tempcntb>0 \ltjjachar\numexpr"2170+\@tempcntb-1\relax\fi}%
+  \else\kian@otf@err{\string\OtfromanNum}{#1}{1〜39}{ラテン文字で xl 等と直接記載してください}%
+  \fi\fi\fi}%
+
+% 丸ひらがな　1〜48（あ〜ん）。Unicodeに丸ひらがなは1字も無いため常に自前合成。
+% AJ1には \ajMaruHira という CID コマンドが存在するが、原ノ味明朝では該当CIDが
+% 全て.notdef相当（実測確認済み）のため使わない。
+%
+% 番号（\丸平{3}）だけでなく、かな1字そのもの（\丸平{う}）も直接渡せる。
+% 判定は「番号か・登録済みのかな1字か」の2択で、どちらにも当たらない引数
+% （表外の字・かな種別違い）は \PackageError で確実に止める（黙って
+% 誤字を出さないため。数字系コマンドと同じ設計方針）。
+\newcommand{\kian@otf@maruhira@n}[1]{%
+  \ifnum#1<1 \kian@otf@err{\string\OtfMaruHira}{#1}{1〜48}{正の数を指定してください}%
+  \else\ifnum#1<49 \kian@otf@ringkana{.785}{\kian@otf@hira@char{#1}}%
+  \else\kian@otf@err{\string\OtfMaruHira}{#1}{1〜48}{別表記を検討してください}%
+  \fi\fi}%
+\DeclareRobustCommand{\OtfMaruHira}[1]{%
+  \edef\kian@otf@arg{#1}%
+  \edef\kian@otf@key{\detokenize\expandafter{\kian@otf@arg}}%
+  \@ifundefined{kian@otf@hira@idx@\kian@otf@key}%
+    {\kian@otf@testnum\kian@otf@arg
+     \ifkian@otf@numarg\kian@otf@maruhira@n\kian@otf@arg
+     \else
+       \@ifundefined{kian@otf@kata@idx@\kian@otf@key}%
+         {\kian@otf@err{\string\OtfMaruHira}{#1}{ひらがな1字（あ〜ん）または1〜48}%
+            {任意の文字を丸で囲むには \string\丸囲\space を使ってください}}%
+         {\kian@otf@err{\string\OtfMaruHira}{#1}{ひらがな1字（あ〜ん）または1〜48}%
+            {片仮名です。\string\丸片\space を使ってください}}%
+     \fi}%
+    {\kian@otf@maruhira@n{\csname kian@otf@hira@idx@\kian@otf@key\endcsname}}%
+}%
+
+% 丸片仮名　1〜47 は Unicode（㋐〜㋾）、48（ン）のみ自前合成
+% （Unicodeの丸片仮名ブロックにはンが収録されていないため）。
+% かな1字を直接渡した場合も、逆引きで番号に変換してからこの数値コアに
+% 渡すので、1〜47は必ず実グリフ（コピペ・全文検索が効く）で出力される。
+\newcommand{\kian@otf@marukata@n}[1]{%
+  \ifnum#1<1 \kian@otf@err{\string\OtfMaruKata}{#1}{1〜48}{正の数を指定してください}%
+  \else\ifnum#1<48 \ltjjachar\numexpr"32D0+#1-1\relax
+  \else\ifnum#1=48 \kian@otf@ringkana{.785}{\kian@otf@kata@char{48}}%
+  \else\kian@otf@err{\string\OtfMaruKata}{#1}{1〜48}{別表記を検討してください}%
+  \fi\fi\fi}%
+\DeclareRobustCommand{\OtfMaruKata}[1]{%
+  \edef\kian@otf@arg{#1}%
+  \edef\kian@otf@key{\detokenize\expandafter{\kian@otf@arg}}%
+  \@ifundefined{kian@otf@kata@idx@\kian@otf@key}%
+    {\kian@otf@testnum\kian@otf@arg
+     \ifkian@otf@numarg\kian@otf@marukata@n\kian@otf@arg
+     \else
+       \@ifundefined{kian@otf@hira@idx@\kian@otf@key}%
+         {\kian@otf@err{\string\OtfMaruKata}{#1}{片仮名1字（ア〜ン）または1〜48}%
+            {任意の文字を丸で囲むには \string\丸囲\space を使ってください}}%
+         {\kian@otf@err{\string\OtfMaruKata}{#1}{片仮名1字（ア〜ン）または1〜48}%
+            {平仮名です。\string\丸平\space を使ってください}}%
+     \fi}%
+    {\kian@otf@marukata@n{\csname kian@otf@kata@idx@\kian@otf@key\endcsname}}%
+}%
+
+% 括弧ひらがな　1〜48（あ〜ん）。AJ1の \ajKakkoHira は原ノ味明朝で全滅
+% （実測確認済み）のため、括弧漢数字と同じ流儀（全角1文字幅＋自前合成）で組む。
+\newcommand{\kian@otf@kakkohira@n}[1]{%
+  \ifnum#1<1 \kian@otf@err{\string\OtfKakkoHira}{#1}{1〜48}{正の数を指定してください}%
+  \else\ifnum#1<49 \kian@otf@paren{1}{\kian@otf@hira@char{#1}}%
+  \else\kian@otf@err{\string\OtfKakkoHira}{#1}{1〜48}{別表記を検討してください}%
+  \fi\fi}%
+\DeclareRobustCommand{\OtfKakkoHira}[1]{%
+  \edef\kian@otf@arg{#1}%
+  \edef\kian@otf@key{\detokenize\expandafter{\kian@otf@arg}}%
+  \@ifundefined{kian@otf@hira@idx@\kian@otf@key}%
+    {\kian@otf@testnum\kian@otf@arg
+     \ifkian@otf@numarg\kian@otf@kakkohira@n\kian@otf@arg
+     \else
+       \@ifundefined{kian@otf@kata@idx@\kian@otf@key}%
+         {\kian@otf@err{\string\OtfKakkoHira}{#1}{ひらがな1字（あ〜ん）または1〜48}%
+            {任意の文字を括弧で囲むには \string\括弧囲\space を使ってください}}%
+         {\kian@otf@err{\string\OtfKakkoHira}{#1}{ひらがな1字（あ〜ん）または1〜48}%
+            {片仮名です。\string\括弧片\space を使ってください}}%
+     \fi}%
+    {\kian@otf@kakkohira@n{\csname kian@otf@hira@idx@\kian@otf@key\endcsname}}%
+}%
+
+% 括弧片仮名　1〜48（ア〜ン）。同上（\ajKakkoKata も原ノ味明朝で全滅）。
+\newcommand{\kian@otf@kakkokata@n}[1]{%
+  \ifnum#1<1 \kian@otf@err{\string\OtfKakkoKata}{#1}{1〜48}{正の数を指定してください}%
+  \else\ifnum#1<49 \kian@otf@paren{1}{\kian@otf@kata@char{#1}}%
+  \else\kian@otf@err{\string\OtfKakkoKata}{#1}{1〜48}{別表記を検討してください}%
+  \fi\fi}%
+\DeclareRobustCommand{\OtfKakkoKata}[1]{%
+  \edef\kian@otf@arg{#1}%
+  \edef\kian@otf@key{\detokenize\expandafter{\kian@otf@arg}}%
+  \@ifundefined{kian@otf@kata@idx@\kian@otf@key}%
+    {\kian@otf@testnum\kian@otf@arg
+     \ifkian@otf@numarg\kian@otf@kakkokata@n\kian@otf@arg
+     \else
+       \@ifundefined{kian@otf@hira@idx@\kian@otf@key}%
+         {\kian@otf@err{\string\OtfKakkoKata}{#1}{片仮名1字（ア〜ン）または1〜48}%
+            {任意の文字を括弧で囲むには \string\括弧囲\space を使ってください}}%
+         {\kian@otf@err{\string\OtfKakkoKata}{#1}{片仮名1字（ア〜ン）または1〜48}%
+            {平仮名です。\string\括弧平\space を使ってください}}%
+     \fi}%
+    {\kian@otf@kakkokata@n{\csname kian@otf@kata@idx@\kian@otf@key\endcsname}}%
+}%
+
+% 丸囲み（汎用）　番号ではなく任意の1〜2文字程度を◯で囲む。既定倍率.785は
+% 仮名・単純な漢字向け。画数の多い正方形に近い字（國 等）は内径をはみ出す
+% ことがあるため、任意引数で倍率を上書きできるようにする（例: \丸囲[.7]{國}）。
+\DeclareRobustCommand{\OtfEncircle}[2][.785]{\kian@otf@ringkana{#1}{#2}}%
+
+% 括弧囲み（汎用）　任意の内容物を括弧で囲む（全角1文字幅）。既定倍率1は
+% 仮名1字向け。画数の多い字・2文字は \丸囲 と同様に任意引数で倍率を
+% 上書きできる（例: \括弧囲[.6]{十一}）。
+\DeclareRobustCommand{\OtfEnparen}[2][1]{\kian@otf@paren{#1}{#2}}%
+
+%==============================================================================%
+% 日本語名のエイリアス
+%
+% 引数を取らないコマンド（記号1文字を出すだけのもの）は用意しない。
+% 直後に和文が続くと制御綴の区切りが曖昧になるため。㈱ 〒 ㊞ 等の
+% 記号1文字は第1層（本文への直接入力）に一本化する。
+%
+% 丸ひらがな・丸片仮名・括弧ひらがな・括弧片仮名について（実測確認済み）:
+%   AJ1には \ajMaruHira \ajMaruKata \ajKakkoHira \ajKakkoKata という
+%   CID コマンドが存在する（\@ajsujidef による自動生成、前段の誤記を訂正）。
+%   しかし原ノ味明朝では、丸ひらがな・括弧ひらがな・括弧片仮名の該当CIDは
+%   全て.notdef相当で使えない。丸片仮名のみ1〜47（Unicode ㋐〜㋾と同一
+%   グリフ）が実装されており、48番目（ン相当）だけが無い。
+%   このため丸ひらがな・括弧ひらがな・括弧片仮名は常に、丸片仮名の48だけは
+%   自前合成で下の \OtfMaruHira 等が処理する。
+%
+% チェックボックス（☑ U+2611・☐ U+2610）は Adobe-Japan1 にも単独グリフ
+% として存在せず、原ノ味明朝にも収録されていない（実測確認済み）。
+% 第1層に含めない。kian 自体が \ballotbox（□）／\ballotboxwithcheck
+% （otf 読込時は \CID{16270} を □ に重ねたチェック付き□）を
+% kian-sect.sty で既に提供しているので、そちらを使うこと。
+
+\let\丸\OtfMaru
+\let\括弧\OtfKakko
+\let\黒丸\OtfKuroMaru
+\let\角\OtfKaku
+\let\丸漢\OtfMaruKanji
+\let\括弧漢\OtfKakkoKanji
+\let\丸英\OtfMaruAlph
+\let\丸英小\OtfMarualph
+\let\大ローマ\OtfRomanNum
+\let\小ローマ\OtfromanNum
+\let\丸平\OtfMaruHira
+\let\丸片\OtfMaruKata
+\let\括弧平\OtfKakkoHira
+\let\括弧片\OtfKakkoKata
+\let\丸囲\OtfEncircle
+\let\括弧囲\OtfEnparen
+
+%==============================================================================%
+% 異体字ショートカット（任意）
+%
+% ajmacros の \ajCIDVarDef（AJ1 内の CID を短い名前に束縛する）が
+% そのまま使える。人名異体字は原則として kian-ivs.sty の \ivs{}
+% （IPAmj明朝・IVS）を優先すること。\ajCIDVarDef は IVS で解決できない
+% AJ1 内完結の字形（例：辺と邊のような明確に別字の異体字）に限って使う。
+%
+%   \ajCIDVarDef{渡邊}{13706}   % \ajVar渡邊 で使える
+%
+% 事務所で頻出する異体字が固まってきたら、ここに \ajCIDVarDef を
+% 追記していく。現時点では枠のみ用意し、既定の登録は行わない。
+
+\endinput%
