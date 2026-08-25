@@ -2,9 +2,7 @@
 % !TEX recipe = LuaLaTeX (kian-lua)
 % ============================================================
 %  訴状テンプレート【従来型・表紙あり・紙提出向け】(kian-v08 LuaLaTeX 版)
-%  ※ 裁判IT化（電子提出）の場合は以下の2ファイルを使用すること:
-%     請求の趣旨 → template-sojo-shushi-lua.tex
-%     請求の原因 → template-sojo-genin-lua.tex
+%  ※ 裁判IT化（電子提出）の場合は template-sojo-it-lua.tex を使用すること
 %
 %  コンパイル: latexmk -r latexmkrc-lua template-sojo-lua.tex
 %              または VS Code の「LuaLaTeX (kian-lua)」レシピ
@@ -27,7 +25,7 @@
 \Tit{訴　状}
 \Dat{令和８年　　月　　日}
 \Recs{
-  [n]{:釧路地方裁判所【北見網走】支部:御中}
+  [n]{:【裁判所名】【支部名】支部:御中}
 }
 
 % ============================================================
