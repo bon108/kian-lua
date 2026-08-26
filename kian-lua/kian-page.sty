@@ -151,6 +151,16 @@
 %==========================================================%
 % 用紙設定
 
+% LuaTeX 用：dvipdfmx の \special{pdf: pagesize …} 相当の用紙寸法設定。
+% \special{pdf:…} は LuaTeX では内容ストリームへ literal 出力されてしまい
+% Acrobat がエラーを出すため、PDF 用紙寸法プリミティブを直接設定する。
+% 呼び出し時点で \paperwidth / \paperheight が設定済みであることを前提とする。
+\providecommand{\kian@setpagesize}{%
+  \@ifundefined{pdfpagewidth}%
+    {\pagewidth=\paperwidth\relax\pageheight=\paperheight\relax}%
+    {\pdfpagewidth=\paperwidth\relax\pdfpageheight=\paperheight\relax}%
+}%
+
 \def\kian@papersize#1{%
   \def\@tempfuna{a4}\def\@tempfunb{p}\def\@tempfunc{=}%
   \@for\@tempfund:=#1\do{%
@@ -209,7 +219,8 @@
     \kian@normalmargin%
     % PDF「export XDPT="dvipdfmx -p a3"」の代わり
     \expandafter\ifx\@tempfunc P%
-      \AtBeginDvi{\special{pdf: pagesize width 297truemm height 420truemm}}%
+      %\AtBeginDvi{\special{pdf: pagesize width 297truemm height 420truemm}}%  ← LuaTeX では不可
+      \kian@setpagesize%
     \fi%
   \else%
   \edef\@tempfune{a3l}\ifx\@tempfund\@tempfune%
@@ -258,7 +269,8 @@
     \kian@normalmargin%
     % PDF「export XDPT="dvipdfmx -p a3 -l"」の代わり
     \expandafter\ifx\@tempfunc P%
-      \AtBeginDvi{\special{pdf: pagesize width 420truemm height 297truemm}}%
+      %\AtBeginDvi{\special{pdf: pagesize width 420truemm height 297truemm}}%  ← LuaTeX では不可
+      \kian@setpagesize%
     \fi%
   \else%
   \edef\@tempfune{a4p}\ifx\@tempfund\@tempfune%
@@ -309,7 +321,8 @@
     \kian@normalmargin%
     % PDF
     \expandafter\ifx\@tempfunc P%
-      \AtBeginDvi{\special{pdf: pagesize width 210truemm height 297truemm}}%
+      %\AtBeginDvi{\special{pdf: pagesize width 210truemm height 297truemm}}%  ← LuaTeX では不可
+      \kian@setpagesize%
     \fi%
   \else%
   \edef\@tempfune{a4l}\ifx\@tempfund\@tempfune%
@@ -358,7 +371,8 @@
     \kian@normalmargin%
     % PDF
     \expandafter\ifx\@tempfunc P%
-      \AtBeginDvi{\special{pdf: pagesize width 297truemm height 210truemm}}%
+      %\AtBeginDvi{\special{pdf: pagesize width 297truemm height 210truemm}}%  ← LuaTeX では不可
+      \kian@setpagesize%
     \fi%
   \else%
     \errmessage{Package kian-page Error: Bad papersize "\@tempfund"}%
@@ -686,7 +700,13 @@
 %==========================================================%
 % PDF のしおりの文字化けの防止
 
-\AtBeginDvi{\special{pdf:tounicode EUC-UCS2}}%
+% ★LuaLaTeX では不要かつ有害なため無効化した（2026-08-26）。
+%   \special{pdf:…} は LuaTeX の PDF バックエンドが「pdf: 以降を内容ストリームへ
+%   literal 出力」する仕様のため、"tounicode EUC-UCS2" が不正な PDF 演算子として
+%   ページ１に残り、Adobe Acrobat が「このページにはエラーがあります」を表示する。
+%   （この指示は dvipdfmx 専用。LuaLaTeX + UTF-8 では PDF 文字列は UTF-16BE で
+%     直接書かれるため、そもそも不要。）
+%\AtBeginDvi{\special{pdf:tounicode EUC-UCS2}}%
 
 %==========================================================%
 % 漢字とローマ字の間の空白（\inhibitxspcode` と \xspcode`）

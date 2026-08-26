@@ -25,8 +25,9 @@
 % luatexja が管理する本物の kanjiskip（文字間自動グルー）は ltjsarticle が
 % 設定するものをそのまま使い、kian 内部用はこの互換レジスタで独立管理する。
 %
-% また uplatex 固有の \AtBeginDvi を安全に無効化し、kian-page で
-% 使われる dvipdfmx 専用特殊命令も luatexja では不要なため空定義する。
+% また kian-page が使う dvipdfmx 専用の \special{pdf:…} は、LuaTeX では
+% 内容ストリームへそのまま literal 出力されて不正な PDF 演算子となるため、
+% kian-page.sty 側で個別に除去してある（このファイルでは扱わない）。
 
 \ProvidesPackage{kian-base}[2026/07/23 v1.0 kian LuaLaTeX compat layer]
 
@@ -54,9 +55,25 @@
 \setbox\z@=\hbox{0}\advance\xkanjiskip by -.5\wd\z@\relax
 
 %==============================================================================%
-% dvipdfmx 専用命令を luatexja では無効化
-
-% \AtBeginDvi は uplatex 用の hook（luatexja では不要）
-\@ifundefined{AtBeginDvi}{\newcommand{\AtBeginDvi}[1]{}}{}
+% dvipdfmx 専用命令について（注意書き）
+%
+% ※ かつてここに次のコードがあったが、いずれの意味でも誤りだったため削除した
+%    （2026-08-26）:
+%      \@ifundefined{AtBeginDvi}{\newcommand{\AtBeginDvi}[1]{}}{}
+%
+%    (1) \AtBeginDvi は LaTeX2e カーネルの標準命令であって uplatex 固有ではない。
+%        したがって \@ifundefined は常に偽となり、この無効化は一度も発動しない
+%        デッドコードだった。
+%    (2) 仮に発動したとしても \AtBeginDvi を潰してはならない。hyperref 等が
+%        正当に使用するため。
+%
+%    実際に問題だったのは \AtBeginDvi ではなく、その中身の dvipdfmx 専用命令
+%    \special{pdf:tounicode EUC-UCS2} の方である。LuaTeX の PDF バックエンドは
+%    \special{pdf:…} の「pdf:」以降を内容ストリームへ literal 出力するため、
+%    不正な PDF 演算子としてページ１に残り、Adobe Acrobat が
+%    「このページにはエラーがあります」を表示していた。
+%    → kian-page.sty 側でコメントアウト済み。
+%
+%    LuaLaTeX 版で dvipdfmx 専用の \special{pdf:…} を新たに書いてはならない。
 
 \endinput
