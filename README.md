@@ -62,8 +62,51 @@ latexmk -r latexmkrc-lua -c template-sojo-lua.tex
 
 ### B. VS Code（LaTeX Workshop）
 
-各テンプレートの先頭に `% !TEX recipe = LuaLaTeX (kian-lua)` を記述しておくと、
-VS Code 上で開いてビルドするだけでレシピが自動選択されます。
+LaTeX Workshop の既定レシピは pdfLaTeX 系のため、そのままでは本テンプレートを
+ビルドできません。`latexmkrc-lua` を使うレシピを自分で定義してください。
+
+**リポジトリのルートを開いた状態**で、`.vscode/settings.json`（またはユーザー
+設定）に次を記述します。
+
+```json
+{
+  "latex-workshop.latex.tools": [
+    {
+      "name": "latexmk-kian-lua",
+      "command": "latexmk",
+      "args": [
+        "-r", "latexmkrc-lua",
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "%DOC%"
+      ]
+    }
+  ],
+  "latex-workshop.latex.recipes": [
+    { "name": "latexmk (kian-lua)", "tools": ["latexmk-kian-lua"] }
+  ],
+  "latex-workshop.latex.recipe.default": "latexmk (kian-lua)"
+}
+```
+
+- `latexmkrc-lua` の TEXINPUTS 設定は `./kian-lua//` と**相対パス**なので、
+  リポジトリのルートをワークスペースとして開いてください。テンプレートを
+  別のフォルダーに複写して使う場合は、`-r` に `latexmkrc-lua` の絶対パスを
+  指定するか、`TEXINPUTS` に `kian-lua/` の絶対パスを設定してください。
+- `latex-workshop.latex.recipe.default` に定義したレシピ名を指定しないと、
+  レシピ一覧の先頭が使われます。
+
+> **注意**: テンプレートには `% !TEX` のマジックコメントを**あえて書いて
+> いません**。
+> `% !TEX root = ...` は、ファイル名を変更すると LaTeX Workshop が古い名前の
+> ファイルを探してビルドに失敗し、テンプレートを複写した場合は複写先ではなく
+> 複写元がビルドされてしまいます（テンプレートは単一ファイル構成なので、
+> そもそも root の指定は不要です）。行が無ければ `\documentclass` を含む
+> 「いま開いているファイル」が root と判定されます。
+> `% !TEX recipe = ...` は、レシピ名が各自の設定によって異なるため書けません
+> （解決できない名前を指定すると既定レシピにフォールバックし、原因の
+> 分かりにくいビルドエラーになります）。
 
 ---
 
