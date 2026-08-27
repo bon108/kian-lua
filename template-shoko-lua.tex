@@ -7,6 +7,14 @@
 %  プレースホルダー: 【...】を実際の内容に置き換えてください
 %  見出し番号: \SecZ=番号なし \SecA=第１ \SecB=１ \SecC=⑴ \SecD=ア \SecE=(ア)
 %
+%  裁判所のひな形に合わせた本テンプレート固有の体裁（他のテンプレートと異なる点）:
+%   ・１行目は「裁判所名　事件番号」。当事者（原告・被告）欄・事件名は表示しない
+%   ・あて先行（\Recs）は置かない。裁判所名は１行目に含める
+%   ・標題「証拠説明書」は年月日行の【前】に置く（\maketitle の引数で順序を指定）
+%   ・表の直前（又は直後）に、民訴法231条の2の電磁的記録に関する注記を
+%     \shokonote で１行入れる
+%  詳細は README-templates-lua.md の「証拠説明書の体裁」を参照。
+%
 %  表は longtblr（tabularray）なので証拠の数が多くても自動的に複数ページへ分割され、
 %  各ページの先頭に見出し行（号証・標目・作成年月日・作成者・立証趣旨・備考）
 %  が自動的に再表示されます（rowhead=1 の働き。手動でのページ調整は不要）。
@@ -72,15 +80,83 @@
   \SetCell{c,m}{#1} & {#2} & #3 & #4 & #5 & #6 \\%
 }
 
+% ------------------------------------------------------------
+% 表の直前（又は直後）に置く注記用マクロ
+% 使い方: \shokonote{※「標目」欄に原本・写しの記載が……}
+%  ・裁判所のひな形に合わせ、必ず１行に収める。
+%    まず \scriptsize（本文の70%）で組み、それでも \linewidth に収まらない場合だけ
+%    \resizebox で行幅ちょうどまで縮小する（graphicx は kian-lua が読み込み済み）。
+%    文言を書き換えても自動的に１行に収まるので、ポイントの手動調整は不要。
+%  ・注記と表の間隔は \shokonotesep だけにする。通常の行送りグルーは
+%    \nointerlineskip で打ち消しているので、\vspace を自分で足す必要はない。
+%    上下対称に間隔を入れているため、表の【直前】に置いても【直後】に置いても
+%    同じ間隔で配置される。
+%  ・※ longtblr 側で presep=0pt, postsep=0pt を指定しておくこと。
+%    tabularray の既定値（1.5\bigskipamount＝約18pt）が残ると表側の余白が勝つ。
+%
+%  【改ページ対策】号証が多くて表がページ末ぎりぎりで終わると、注記だけが
+%  次ページの先頭に取り残される。これを防ぐため、注記を出す直前にページの
+%  残り高さ（\pagegoal-\pagetotal）を測り、注記の高さに足りないときだけ
+%  \enlargethispage でそのページを注記の分（約1.5行）だけ伸ばす。
+%  TeXは「版面があふれる直前の改ページ位置」で切るので、あふれさえしなければ
+%  表と注記の間で改ページされない。
+%  ※ 表の直前にある改ページ位置（longtblr の postsep のグルー）自体は
+%    消せない（縦モードには \unskip に当たるものが無く、\removelastskip は
+%    グルーを打ち消すだけで節点を消さない）。上記のとおりページを伸ばして
+%    「あふれさせない」ことで対処している。
+%  ※ 注記を表の【前】に置いた場合、表がまるごと次ページへ送られる状況
+%    （そのページに表が1行も入らない場合）では、tabularray 側が強制改ページ
+%    するため注記が前ページ末尾に残ることがある。表の後ろに置く現行の配置では
+%    この問題は起きない。
+% ------------------------------------------------------------
+\newcommand{\shokonotesep}{0.3\zw}% 注記と表との間隔（詰めたい／広げたい場合はここを変える）
+\newlength{\shokonoteht}%   注記が占める高さ（上下の間隔込み）
+\newlength{\shokonoterest}% ページの残り高さ
+\newcommand{\shokonote}[1]{%
+  \par
+  \begingroup
+    % １行に収める
+    \setbox0=\hbox{\scriptsize #1}%
+    \ifdim\wd0>\linewidth
+      \setbox0=\hbox{\resizebox{\linewidth}{!}{\usebox0}}%
+    \fi
+    \setlength{\shokonoteht}{\ht0}%
+    \addtolength{\shokonoteht}{\dp0}%
+    \addtolength{\shokonoteht}{\shokonotesep}%
+    \addtolength{\shokonoteht}{\shokonotesep}%
+    % ページ残量が足りなければ、そのページだけ伸ばす（改ページ対策）
+    \ifdim\pagegoal<\maxdimen
+      \setlength{\shokonoterest}{\pagegoal}%
+      \addtolength{\shokonoterest}{-\pagetotal}%
+      \ifdim\shokonoterest<\shokonoteht
+        % 伸ばすのは不足分だけ（残量が負＝既にあふれている場合にも対応する）
+        \addtolength{\shokonoteht}{-\shokonoterest}%
+        \enlargethispage{\shokonoteht}%
+      \fi
+    \fi
+    \nobreak\vskip\shokonotesep
+    \nointerlineskip
+    \box0%             縦モードに直接置く（前後に行送りグルーが入らない）
+    \nobreak\nointerlineskip
+    \nobreak\vskip\shokonotesep
+    \nobreak% 注記を表の前に置いた場合に、注記と表の間で切らせないため
+  \endgroup
+  \par
+}
+
+% １行目は「裁判所名　事件番号」。裁判所のひな形に合わせ、当事者（原告・被告）欄と
+% 事件名は表示しない。
+%   ・行頭の「C=」は行タイプの明示指定でコメント行（「部分1　部分2」の並び）になる。
+%     これを付けないと「裁判所名」が肩書、「事件番号」が氏名と誤判定される。
+%   ・\Idn（＝\idcodenumber）は事件番号を整形する公開マクロ。
+%     \Idn{R８(ワ)１８４３} → 令和８年（ワ）第１８４３号
 \Idcs{
-  [o]{R８(　)　　:【事件名】\\原告:【氏/名】:\\被告:【氏/名】}
+  [o]{C=【裁判所名】【支部名】支部:\Idn{R８(　)　　}}
 }
 
 \Tit{証拠説明書１}
 \Dat{令和８年　　月　　日}
-\Recs{
-  [n]{:【裁判所名】【支部名】支部:御中}
-}
+% 証拠説明書にはあて先行を置かない（裁判所名は上の \Idcs の１行目に記載する）。
 %\senderhlength{18}{4}{2}{10}% \senderhlength{①}{②}{③}{④}
 % ①左端からのインデント（開始位置）② （肩書幅）「弁護士」という肩書を配置するボックスの横幅です。③ （肩書と名前の間隔）「弁護士」と「名前」の間に空けるスペースの幅です。④（名前幅）「【氏名】」という名前を均等割り付け（配置）するボックスの横幅です。
 \Sens{
@@ -93,7 +169,9 @@
 
 \begin{document}
 
-\maketitle
+% 標題の配置: i=事件番号 t=標題 d=日付 s=差出人（+は0.25行分の間隔）
+% あて先(r)は使わないので指定しない。標題「証拠説明書」は年月日行の前に置く。
+\maketitle[i+++t+++d++s]
 
 \vspace{2\zw}
 
@@ -119,6 +197,8 @@
 % \vcenterboxのような手製の縦中央揃えマクロは不要（tabularrayが自動で処理する）。
 \begin{longtblr}[
   expand = \shokorow, % \shokorowマクロ内の&を展開してから表を組む（tabularrayの仕様）
+  presep = 0pt, postsep = 0pt, % 表の上下の余白。tabularrayの既定は1.5\bigskipamount（約18pt）
+                               % だが、\shokonote との間隔を\shokonoteだけで制御するため0にする。
 ]{
   colspec = {|Q[c,m,wd=\dimexpr3\zw+1pt\relax]|Q[l,m,wd=\dimexpr9\zw+4pt\relax]|Q[l,m,wd=\dimexpr3\zw+20pt\relax]|Q[l,m,wd=\dimexpr4\zw+1pt\relax]|Q[l,m,wd=\dimexpr9\zw+4pt\relax]|Q[l,m,wd=\dimexpr3\zw+3pt\relax]|},
   hlines, vlines,
@@ -151,6 +231,7 @@
   %   {甲002\\-1}  … 号証欄を2行に
 \end{longtblr}
 \endgroup
+\shokonote{※「標目」欄に原本・写しの記載がないものは、民事訴訟法２３１条の２の電磁的記録として提出するものである。}
 
 \begin{flushright}
 以　上
