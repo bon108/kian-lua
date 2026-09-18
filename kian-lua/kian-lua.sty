@@ -113,4 +113,37 @@
   \ltjsetparameter{xkanjiskip=\@kian@ltjksb}%
 }%
 
+%==============================================================================%
+% 文末の「以上」（\Ijo）
+%
+% 【背景】
+%   \begin{flushright}以　上\end{flushright} は trivlist 環境であるため、
+%   ltjsarticle の \topsep（0.5\baselineskip）が前後に挿入され、「以上」が
+%   1.5行分の高さを占める。kian は1頁26行の固定レイアウトで行間に伸縮の
+%   余地がないため、本文が25行で終わったページに1行分の空きがあっても
+%   「以上」が収まらず、単独で次ページへ送られてしまう。
+%
+% 【対処】
+%   (1) trivlist を使わず \raggedleft で右寄せし、余分な \topsep を出さない。
+%   (2) 「以上」の前の空きを、自然長と同じだけ収縮できるグルーとする。
+%       余裕があるときは従来どおり空き、収まらないときだけ0まで縮む。
+%   (3) 前後に \penalty\@M を置き、「以上」だけが単独で次ページへ送られる
+%       ことを防ぐ。真にページが満杯の場合は直前の行も一緒に送られる。
+%
+% 【書式】
+%   \Ijo        … 「以上」の前を0.5行空ける（既定。従来の見た目と同じ）
+%   \Ijo[2\zw]  … 「以上」の前を2全角分空ける（紙提出の訴状で使用）
+
+\def\kian@Ijo{%
+  \@ifnextchar[{\kian@Ijo@A}{\kian@Ijo@A[.5\baselineskip]}}%]
+\def\kian@Ijo@A[#1]{%
+  \par%
+  \penalty\@M%                            直前の行と分離させない
+  \dimen@=#1\relax%
+  \vskip\dimen@\@plus\z@\@minus\dimen@%   収まらないときだけ0まで縮む空き
+  \penalty\@M%
+  {\raggedleft 以　上\par}%
+}%
+\@ifundefined{Ijo}{\let\Ijo\kian@Ijo}{}%
+
 \endinput
