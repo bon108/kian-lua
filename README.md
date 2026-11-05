@@ -34,6 +34,7 @@ kian-lua は、秦誠一郎（Seiichiro HATA）氏が公開している公文書
 | `template-shoko-lua.tex` | 証拠説明書 | `\Tit{証拠説明書（甲）}` | 乙号証なら `（乙）` に変更。`\shokorow{}{}{}{}{}{}`（6引数：号証番号・標目（原本/写しの別は標目欄末尾に付記）・作成年月日・作成者・立証趣旨・備考）で各行を追加。事件番号・当事者は `\Idcs` 統合書式、代理人署名は `\Sens[0.5]` |
 | `template-shokai-lua.tex` | 照会書 | `\Tit{照会書}` | 事件番号なし（`\Idcs` は使わない）。宛先は `\Recs[n]`、差出人（事務所・弁護士）は `\Sens[0.5]` |
 | `template-iken-lua.tex` | 意見書 | `\Tit{意見書}` | 作成者（専門家）は `\Sens[0.5]{…}` で表示。事件番号・当事者は `\Idcs` 統合書式（裁判所宛先はなし） |
+| `template-benron-lua.tex` | 刑事弁護書面（弁論要旨・冒頭陳述書等） | `\Tit{【弁論要旨】}`（書面名に置き換え） | `\Idcs` は被告人1行（原告・被告欄なし）。差出人は「弁護人」。肩書が短い（3字）ため `\senderhlength{17}{4}{2}{10}` を有効にしてある（既定の肩書幅10字では均等割付けで間延びする）。肩書を変えるときの値の目安はテンプレート内のコメント参照 |
 
 ---
 
@@ -344,6 +345,7 @@ LaTeX Workshop の既定レシピは pdfLaTeX 系のため、そのままでは�
 ├── template-shoko-lua.tex
 ├── template-shokai-lua.tex
 ├── template-iken-lua.tex
+├── template-benron-lua.tex        ← 刑事弁護書面（弁論要旨・冒頭陳述書等）
 ├── .gitignore
 ├── LICENSE            ← GNU General Public License v3
 └── README.md          ← この文書
